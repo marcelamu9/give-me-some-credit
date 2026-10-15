@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Datos: raw es inmutable y no se versiona
+data/**
+!data/**/
+!data/**/.gitkeep
+
+# Artefactos de modelos y experimentos
+mlruns/
+mlartifacts/
+models/*.pkl
+models/*.joblib
+
+# Entorno local
+.env
+.claude/settings.local.json
+
+# Workspace de ejecución del plan (ledger)
+.superpowers/
