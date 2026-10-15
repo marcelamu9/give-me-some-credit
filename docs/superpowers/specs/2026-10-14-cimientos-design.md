@@ -74,12 +74,12 @@ pyproject.toml  uv.lock  .python-version  .pre-commit-config.yaml (ruff)
 EDA, split, features, modelos, MLflow, API, monitoreo, Docker, despliegue en la nube.
 
 ## 5. Criterios de aceptación
-- [ ] `uv sync && uv run poe check` pasa en limpio en una máquina nueva.
+- [x] `uv sync && uv run poe check` pasa en limpio en una máquina nueva.
 - [ ] El CI corre en verde en GitHub tras el primer push (push manual por la usuaria; aún no hay remoto).
 - [ ] Una sesión nueva de Claude Code muestra `AGENTS.md` cargado vía `CLAUDE.md` (`/memory`).
-- [ ] `data/raw/cs-training.csv` existe con 150.000 filas y 12 columnas (verificado) y no está versionado en git.
-- [ ] `git log` muestra al menos: commit de spec, commit de plan, commits de implementación.
-- [ ] Ningún documento duplica contenido de otro (negocio solo en `business_context.md`, reglas solo en `AGENTS.md`/constitución).
+- [x] `data/raw/cs-training.csv` existe con 150.000 filas y 12 columnas (verificado) y no está versionado en git.
+- [x] `git log` muestra al menos: commit de spec, commit de plan, commits de implementación.
+- [x] Ningún documento duplica contenido de otro (negocio solo en `business_context.md`, reglas solo en `AGENTS.md`/constitución).
 
 ## 6. Supuestos abiertos (a resolver en sub-proyectos posteriores)
 - Matriz de costos FN:FP: se propone 5:1 como punto de partida en `business_context.md`, con análisis de sensibilidad en el sub-proyecto 3.
