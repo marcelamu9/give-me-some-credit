@@ -358,9 +358,7 @@ def test_missing_path_key_is_named(tmp_path):
 
 
 def test_section_that_is_not_a_mapping_is_rejected(tmp_path):
-    text = VALID_YAML.replace(
-        "costs:\n  false_negative: 5\n  false_positive: 1\n", "costs: null\n"
-    )
+    text = VALID_YAML.replace("costs:\n  false_negative: 5\n  false_positive: 1\n", "costs: null\n")
     with pytest.raises(ConfigError, match="costs"):
         load_config(write_params(tmp_path, text))
 
