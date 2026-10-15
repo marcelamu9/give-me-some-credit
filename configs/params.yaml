@@ -1,0 +1,20 @@
+# Parámetros del proyecto. Rutas relativas a la raíz del repo.
+seed: 42
+target: SeriousDlqin2yrs
+
+paths:
+  raw: data/raw
+  interim: data/interim
+  processed: data/processed
+  external: data/external
+  models: models
+  reports: reports
+
+data:
+  training_file: cs-training.csv
+
+# Supuesto de negocio: costo relativo de un falso negativo (aprobar a quien cae en mora)
+# frente a un falso positivo (rechazar a un buen cliente). Ver docs/business_context.md.
+costs:
+  false_negative: 5
+  false_positive: 1
