@@ -1,27 +1,42 @@
-# Objetivo del proyecto
+# AGENTS.md — reglas de trabajo
 
-Desarrollar un modelo de clasificación que estime la probabilidad de que un cliente presente una mora severa de 90 días o más durante los próximos dos años.
+Modelo de probabilidad de mora severa (90+ días en los próximos 2 años) sobre el dataset
+Give Me Some Credit, servido por una API de inferencia. Contexto completo de negocio:
+[docs/business_context.md](docs/business_context.md).
 
-# Objetivo de negocio
+## Antes de tocar código
 
-Apoyar decisiones de riesgo crediticio equilibrando:
+1. Lee [docs/constitution.md](docs/constitution.md).
+2. Lee la spec activa y su plan:
+   - Spec activa: `docs/superpowers/specs/2026-10-14-cimientos-design.md`
+   - Plan activo: `docs/superpowers/plans/2026-10-14-cimientos.md`
+3. Si la tarea no está cubierta por una spec aprobada, no escribas código: propón primero una spec.
 
-- El costo de aprobar a un cliente con alto riesgo de incumplimiento.
-- El costo de rechazar innecesariamente a un buen cliente.
+## Mapa de documentos
 
-# Contexto de uso esperado
+| Necesito… | Dónde |
+|---|---|
+| Problema, costos, decisión, salida de la API | `docs/business_context.md` |
+| Principios no negociables | `docs/constitution.md` |
+| Variables y calidad de datos | `docs/data_dictionary.md` |
+| Decisiones técnicas y su porqué | `docs/decisions/ADR-*.md` |
+| Specs y planes por sub-proyecto | `docs/superpowers/specs/`, `docs/superpowers/plans/` |
+| Registro del uso de IA | `docs/ai_usage_log.md` |
 
-El modelo se consumirá inicialmente mediante una API de inferencia.
+## Comandos
 
-La API recibirá las variables de un cliente y devolverá:
-
-- probabilidad estimada de mora severa;
-- nivel de riesgo;
-- decisión sugerida.
-
-La arquitectura definitiva podrá ajustarse durante el proyecto.
-
+- Instalar: `uv sync` y luego `uv run pre-commit install`
+- Lint: `uv run poe lint` · Formatear: `uv run poe format`
+- Tests: `uv run poe test` · Todo: `uv run poe check`
 
 ## Reglas
 
-* Lee `docs/constitution.md` y la spec activa (`specs/NNN-*/`) antes de tocar código.
+- No modifiques ni muevas nada en `data/raw/`.
+- No uses `cs-test.csv` para evaluar: no tiene etiquetas.
+- Obtén rutas y parámetros con `credit_risk.config.load_config()`; nunca rutas absolutas ni constantes de negocio en el código.
+- Ningún test puede depender de `data/raw/` (el CI no tiene los datos).
+- `uv run poe check` debe pasar antes de cada commit.
+- Un commit por tarea, en inglés, con Conventional Commits (`feat:`, `fix:`, `docs:`, `build:`, `ci:`, `test:`).
+- Documentación en español; código e identificadores en inglés.
+- Al cerrar una tarea hecha con IA, añade una entrada a `docs/ai_usage_log.md`.
+- Al cambiar de sub-proyecto, actualiza aquí la spec y el plan activos.
