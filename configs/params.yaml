@@ -18,3 +18,8 @@ data:
 costs:
   false_negative: 5
   false_positive: 1
+
+# Fracción de test sobre el total; fracción de valid sobre el resto.
+split:
+  test_size: 0.2
+  valid_size: 0.2

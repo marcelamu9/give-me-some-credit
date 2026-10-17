@@ -19,6 +19,9 @@ data:
 costs:
   false_negative: 5
   false_positive: 1
+split:
+  test_size: 0.2
+  valid_size: 0.2
 """
 
 
@@ -97,4 +100,25 @@ def test_non_positive_costs_are_rejected(tmp_path, fn, fp):
 def test_non_numeric_cost_is_rejected(tmp_path):
     text = VALID_YAML.replace("false_negative: 5", "false_negative: high")
     with pytest.raises(ConfigError, match="number"):
+        load_config(write_params(tmp_path, text))
+
+
+def test_default_split_params():
+    cfg = load_config()
+    assert cfg.split.test_size == 0.2
+    assert cfg.split.valid_size == 0.2
+
+
+def test_missing_split_key_is_named(tmp_path):
+    text = VALID_YAML.replace("  valid_size: 0.2\n", "")
+    with pytest.raises(ConfigError, match="valid_size"):
+        load_config(write_params(tmp_path, text))
+
+
+@pytest.mark.parametrize(("test_size", "valid_size"), [(0, 0.2), (0.2, 1), (1.5, 0.2), ("x", 0.2)])
+def test_split_sizes_must_be_fractions(tmp_path, test_size, valid_size):
+    text = VALID_YAML.replace("test_size: 0.2", f"test_size: {test_size}").replace(
+        "valid_size: 0.2", f"valid_size: {valid_size}"
+    )
+    with pytest.raises(ConfigError, match="between 0 and 1"):
         load_config(write_params(tmp_path, text))
