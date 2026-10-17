@@ -125,11 +125,11 @@ resumen, siempre que respeten esta spec y la constitución.
 
 ## 11. Criterios de aceptación
 
-- [ ] `uv run poe check` pasa; los tests nuevos usan datos sintéticos y no leen `data/raw/`.
-- [ ] El notebook se ejecuta de punta a punta sin errores (`uv run jupyter nbconvert --execute`).
-- [ ] La Fase 1 reproduce las cifras de referencia de la sección 3 (o explica cualquier diferencia).
-- [ ] `data/interim/{train,valid,test}.csv` existen, no tienen duplicados exactos, sus tamaños suman las filas deduplicadas y la tasa de mora difiere menos de 0,1 pp entre particiones.
-- [ ] Ninguna función de la Fase 2 recibe la validación ni el test (visible en el notebook).
-- [ ] Re-ejecutar el split produce exactamente las mismas particiones.
-- [ ] `docs/eda_findings.md` existe, cita solo cifras del notebook ejecutado y cierra con preguntas abiertas para el sub-proyecto 2.
-- [ ] `AGENTS.md` apunta a esta spec y a su plan como activos.
+- [x] `uv run poe check` pasa; los tests nuevos usan datos sintéticos y no leen `data/raw/`.
+- [x] El notebook se ejecuta de punta a punta sin errores (`uv run jupyter nbconvert --execute`).
+- [x] La Fase 1 reproduce las cifras de referencia de la sección 3 (o explica cualquier diferencia).
+- [x] `data/interim/{train,valid,test}.csv` existen, no tienen duplicados exactos, sus tamaños suman las filas deduplicadas y la tasa de mora difiere menos de 0,1 pp entre particiones.
+- [x] Ninguna función de la Fase 2 recibe la validación ni el test (visible en el notebook).
+- [x] Re-ejecutar el split produce exactamente las mismas particiones.
+- [x] `docs/eda_findings.md` existe, cita solo cifras del notebook ejecutado y cierra con preguntas abiertas para el sub-proyecto 2.
+- [x] `AGENTS.md` apunta a esta spec y a su plan como activos.

@@ -42,7 +42,7 @@ trazable en `git log`. Reglas para agentes en [AGENTS.md](AGENTS.md); principios
 | # | Sub-proyecto | Estado |
 |---|---|---|
 | 0 | Cimientos | ✅ |
-| 1 | Datos + EDA | pendiente |
+| 1 | Datos + EDA | ✅ |
 | 2 | Modelado | pendiente |
 | 3 | Política de decisión | pendiente |
 | 4 | API | pendiente |
