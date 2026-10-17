@@ -36,6 +36,24 @@ Este documento diagnostica: no se imputó, recortó ni recodificó nada.
 
 Única acción: eliminar los 609 duplicados exactos (150.000 → 149.391 filas).
 
+### Perfil de los casos de dominio y duplicados contradictorios (enmienda 2026-10-17)
+
+Tasa de mora base del archivo completo: 6,68 %. "Positivos" = casos de mora que se perderían si se eliminaran esas filas.
+
+| Chequeo | Filas | % filas | Tasa de mora | Positivos |
+|---|---|---|---|---|
+| `age` < 18 | 1 | 0,00 % | 0 % | 0 |
+| Códigos 96/98 | 269 | 0,18 % | **54,6 %** | 147 |
+| `MonthlyIncome` = 0 | 1.634 | 1,09 % | 4,0 % | 66 |
+| `RevolvingUtilization…` > 1 | 3.321 | 2,21 % | **37,3 %** | 1.237 |
+| `DebtRatio` > 1 | 35.137 | 23,42 % | 6,5 % | 2.291 |
+
+- **Los 96/98 van juntos:** las 269 filas tienen el código en las tres variables de atraso a la vez (y siempre el mismo código en las tres). Es un registro especial, no tres errores independientes.
+- **Las filas 96/98 son de muy alto riesgo** (54,6 % de mora, 8 veces la base). Eliminarlas quitaría 147 positivos y una señal fuerte: apunta a **tratarlas** (por ejemplo, indicador propio), no a borrarlas.
+- **`RevolvingUtilization…` > 1 también concentra riesgo** (37,3 %, 1.237 positivos): eliminarlas sería muy costoso; los valores extremos se tratan, no se descartan.
+- **`DebtRatio` > 1 es demasiado frecuente (23 %) y con mora normal** como para ser un error: es una característica de la distribución.
+- **Duplicados contradictorios:** 145 filas en 37 grupos, 47 positivos. 137 de esas filas no tienen `MonthlyIncome`, y 10 de los 37 grupos (39 filas) son además registros 96/98 (perfiles casi vacíos: edad, códigos y ceros). Parecen registros con poca información más que errores de captura.
+
 ## 3. Split
 
 | Partición | Filas | Tasa de mora |
@@ -78,11 +96,11 @@ Este documento diagnostica: no se imputó, recortó ni recodificó nada.
 
 ## 5. Preguntas abiertas para el sub-proyecto 2
 
-1. Códigos 96/98 en las 3 variables de atraso: ¿recodificar como nulo, categoría aparte o recorte?
+1. Códigos 96/98 en las 3 variables de atraso (269 filas, siempre juntos, 54,6 % de mora): ¿indicador propio + recodificar los conteos, o categoría aparte? Eliminar perdería 147 positivos.
 2. `MonthlyIncome`: ¿imputar o añadir indicador de nulo (la mora es menor entre los nulos)? ¿Qué hacer con los 1.634 ceros?
 3. `NumberOfDependents`: nulos informativos (4,45 % de mora); ¿imputar con 0 o con indicador?
 4. Ratios con valores extremos (`RevolvingUtilization…`, `DebtRatio`): ¿recorte por percentil o transformación?
 5. `age` < 18 (1 fila): ¿filtrar?
-6. Duplicados contradictorios (37 grupos) y 19 combinaciones repetidas entre particiones: ¿efecto sobre la evaluación?
+6. Duplicados contradictorios (37 grupos, 145 filas, 47 positivos, casi todos sin `MonthlyIncome`) y 19 combinaciones repetidas entre particiones: ¿conservar (son pocos y parecen perfiles con poca información) o eliminar? ¿Efecto sobre la evaluación?
 7. Variables correlacionadas (apertura de créditos, préstamos inmobiliarios, ingreso): ¿aportan información redundante?
 8. Variables de atraso casi constantes: ¿agrupar en tramos para analizar su relación con el riesgo?

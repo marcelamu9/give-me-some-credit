@@ -3,8 +3,11 @@ import pytest
 
 from credit_risk.data.quality import (
     check_schema,
+    conflicting_duplicate_rows,
     count_conflicting_duplicate_groups,
     count_exact_duplicates,
+    domain_issue_profile,
+    domain_issue_rows,
     domain_issues,
     drop_exact_duplicates,
     dtype_report,
@@ -12,6 +15,7 @@ from credit_risk.data.quality import (
     id_report,
     negative_counts,
     non_numeric_counts,
+    past_due_code_overlap,
     target_report,
 )
 from credit_risk.data.schema import PAST_DUE_COLUMNS, RATIO_COLUMNS, TARGET
@@ -91,3 +95,50 @@ def test_duplicate_functions_do_not_mutate(raw_frame, function):
     before = raw_frame.copy()
     function(raw_frame)
     assert raw_frame.equals(before)
+
+
+def test_conflicting_duplicate_rows_returns_groups(raw_frame):
+
+    rows = conflicting_duplicate_rows(raw_frame, TARGET)
+    assert sorted(rows.index.tolist()) == [3, 4, 6, 7, 8]
+    assert rows["group"].nunique() == 2
+    groups = rows.groupby("group").apply(lambda g: sorted(g.index.tolist())).tolist()
+    assert sorted(groups) == [[3, 4], [6, 7, 8]]
+
+
+@pytest.mark.parametrize("check", ["age < 18", "code 96/98", "== 0", "> 1"])
+def test_domain_issue_rows(raw_frame, check):
+
+    assert domain_issue_rows(raw_frame, check).index.tolist() == [5]
+
+
+def test_domain_issue_rows_rejects_unknown_check(raw_frame):
+
+    with pytest.raises(ValueError, match="Unknown check"):
+        domain_issue_rows(raw_frame, "age > 200")
+
+
+def test_domain_issue_profile(raw_frame):
+
+    profile = domain_issue_profile(raw_frame, TARGET)
+    age = profile[profile["check"] == "age < 18"].iloc[0]
+    assert age["rows"] == 1
+    assert age["pct_rows"] == pytest.approx(12.5)
+    assert age["default_rate"] == pytest.approx(1.0)
+    assert age["base_default_rate"] == pytest.approx(3 / 8)
+    assert age["positives"] == 1
+    assert list(profile.columns) == [
+        "check",
+        "column",
+        "kind",
+        "rows",
+        "pct_rows",
+        "default_rate",
+        "base_default_rate",
+        "positives",
+    ]
+
+
+def test_past_due_code_overlap(raw_frame):
+
+    assert past_due_code_overlap(raw_frame) == {"any": 1, "all": 1}

@@ -73,18 +73,57 @@ def negative_counts(df: pd.DataFrame) -> pd.Series:
     return (numeric < 0).sum()
 
 
-def domain_issues(df: pd.DataFrame) -> pd.DataFrame:
-    checks = [("age < 18", "age", "impossible", (df["age"] < 18).sum())]
+def _domain_masks(df: pd.DataFrame) -> list[tuple[str, str, str, pd.Series]]:
+    """(check, column, kind, boolean mask) for every domain check."""
+    masks = [("age < 18", "age", "impossible", df["age"] < 18)]
     for column in PAST_DUE_COLUMNS:
-        count = df[column].isin(SPECIAL_PAST_DUE_CODES).sum()
-        checks.append(("code 96/98", column, "impossible", count))
-    checks.append(("== 0", "MonthlyIncome", "suspicious", (df["MonthlyIncome"] == 0).sum()))
+        masks.append(("code 96/98", column, "impossible", df[column].isin(SPECIAL_PAST_DUE_CODES)))
+    masks.append(("== 0", "MonthlyIncome", "suspicious", df["MonthlyIncome"] == 0))
     for column in RATIO_COLUMNS:
-        checks.append(("> 1", column, "suspicious", (df[column] > 1).sum()))
+        masks.append(("> 1", column, "suspicious", df[column] > 1))
+    return masks
+
+
+def domain_issues(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(
-        [(check, column, kind, int(count)) for check, column, kind, count in checks],
+        [(check, column, kind, int(mask.sum())) for check, column, kind, mask in _domain_masks(df)],
         columns=["check", "column", "kind", "count"],
     )
+
+
+def domain_issue_rows(df: pd.DataFrame, check: str) -> pd.DataFrame:
+    """Rows flagged by `check` in any of its columns (e.g. "code 96/98" across the 3 past-due)."""
+    masks = [mask for name, _, _, mask in _domain_masks(df) if name == check]
+    if not masks:
+        raise ValueError(f"Unknown check {check!r}")
+    return df[pd.concat(masks, axis=1).any(axis=1)]
+
+
+def domain_issue_profile(df: pd.DataFrame, target: str) -> pd.DataFrame:
+    """Per check: affected rows, their default rate vs. the base rate, and positives at stake."""
+    base_rate = float(df[target].mean())
+    rows = []
+    for check, column, kind, mask in _domain_masks(df):
+        flagged = df.loc[mask, target]
+        rows.append(
+            {
+                "check": check,
+                "column": column,
+                "kind": kind,
+                "rows": int(mask.sum()),
+                "pct_rows": 100 * float(mask.mean()),
+                "default_rate": float(flagged.mean()) if len(flagged) else float("nan"),
+                "base_default_rate": base_rate,
+                "positives": int(flagged.sum()),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def past_due_code_overlap(df: pd.DataFrame) -> dict[str, int]:
+    """Rows with a 96/98 code in any vs. in all of the past-due columns."""
+    coded = df[PAST_DUE_COLUMNS].isin(SPECIAL_PAST_DUE_CODES)
+    return {"any": int(coded.any(axis=1).sum()), "all": int(coded.all(axis=1).sum())}
 
 
 def count_exact_duplicates(df: pd.DataFrame) -> int:
@@ -99,3 +138,12 @@ def drop_exact_duplicates(df: pd.DataFrame) -> pd.DataFrame:
 def count_conflicting_duplicate_groups(df: pd.DataFrame, target: str) -> int:
     """Groups of rows with the same features (NaN equal) but more than one target value."""
     return int((df.groupby(FEATURES, dropna=False)[target].nunique() > 1).sum())
+
+
+def conflicting_duplicate_rows(df: pd.DataFrame, target: str) -> pd.DataFrame:
+    """Rows belonging to conflicting groups, with a `group` number (1..n), sorted by group."""
+    grouped = df.groupby(FEATURES, dropna=False)
+    conflicting = grouped[target].transform("nunique") > 1
+    group_ids = grouped.ngroup()[conflicting]
+    renumbered = group_ids.rank(method="dense").astype(int)
+    return df[conflicting].assign(group=renumbered).sort_values(["group", target])

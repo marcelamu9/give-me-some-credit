@@ -118,6 +118,18 @@ sub-proyecto 2** (p. ej. tratamiento de 96/98, imputación de `MonthlyIncome`, o
 - Dependencias nuevas: `matplotlib` (principal); `ipykernel` y `nbconvert` (dev) para ejecutar el notebook.
 - El notebook no corre en el CI (necesita los datos); se verifica localmente ejecutándolo de punta a punta.
 
+## 9.1 Enmienda (2026-10-17, tras la ejecución)
+
+Petición de la usuaria, para decidir entre tratar o eliminar en el sub-proyecto 2:
+
+- Ver en el notebook **las filas** de los grupos contradictorios y de cada chequeo de dominio.
+  Esto reemplaza, solo para esas celdas de la Fase 1, la regla del plan de no mostrar filas de
+  datos; la usuaria acepta que esas filas queden versionadas (repo privado).
+- Añadido por Claude: perfil por chequeo (filas, % del total, tasa de mora frente a la base,
+  positivos en juego) y solapamiento de los códigos 96/98 entre las tres variables de atraso.
+- Nuevas funciones en `quality.py`: `conflicting_duplicate_rows`, `domain_issue_rows`,
+  `domain_issue_profile`, `past_due_code_overlap`. Sigue sin aplicarse ningún tratamiento.
+
 ## 10. Lo que queda al criterio de quien implemente
 
 Firmas de funciones, nombres internos de módulos, estilo de los gráficos y redacción del
