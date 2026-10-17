@@ -91,14 +91,6 @@ def domain_issues(df: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def domain_issue_rows(df: pd.DataFrame, check: str) -> pd.DataFrame:
-    """Rows flagged by `check` in any of its columns (e.g. "code 96/98" across the 3 past-due)."""
-    masks = [mask for name, _, _, mask in _domain_masks(df) if name == check]
-    if not masks:
-        raise ValueError(f"Unknown check {check!r}")
-    return df[pd.concat(masks, axis=1).any(axis=1)]
-
-
 def domain_issue_profile(df: pd.DataFrame, target: str) -> pd.DataFrame:
     """Per check: affected rows, their default rate vs. the base rate, and positives at stake."""
     base_rate = float(df[target].mean())
@@ -138,12 +130,3 @@ def drop_exact_duplicates(df: pd.DataFrame) -> pd.DataFrame:
 def count_conflicting_duplicate_groups(df: pd.DataFrame, target: str) -> int:
     """Groups of rows with the same features (NaN equal) but more than one target value."""
     return int((df.groupby(FEATURES, dropna=False)[target].nunique() > 1).sum())
-
-
-def conflicting_duplicate_rows(df: pd.DataFrame, target: str) -> pd.DataFrame:
-    """Rows belonging to conflicting groups, with a `group` number (1..n), sorted by group."""
-    grouped = df.groupby(FEATURES, dropna=False)
-    conflicting = grouped[target].transform("nunique") > 1
-    group_ids = grouped.ngroup()[conflicting]
-    renumbered = group_ids.rank(method="dense").astype(int)
-    return df[conflicting].assign(group=renumbered).sort_values(["group", target])

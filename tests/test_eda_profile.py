@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 from credit_risk.eda.profile import (
+    debt_ratio_by_income_status,
     default_rate_by_decile,
     missing_summary,
     outlier_counts,
@@ -94,3 +95,22 @@ def test_profile_functions_do_not_mutate_input():
     spearman_matrix(df, ["x", "z"])
     default_rate_by_decile(df, "x", "y", q=2)
     pd.testing.assert_frame_equal(df, before)
+
+
+def test_debt_ratio_by_income_status():
+    df = pd.DataFrame(
+        {
+            "MonthlyIncome": [np.nan, np.nan, 0.0, 1000.0, 2000.0, 3000.0],
+            "DebtRatio": [1500.0, 800.0, 900.0, 0.25, 0.5, 1.5],
+            "y": [1, 0, 0, 0, 1, 0],
+        }
+    )
+    result = debt_ratio_by_income_status(df, "y")
+    assert result.index.tolist() == ["missing", "zero", "positive"]
+    assert result["rows"].tolist() == [2, 1, 3]
+    assert result.loc["missing", "debt_ratio_median"] == pytest.approx(1150.0)
+    assert result.loc["missing", "pct_debt_ratio_gt_1"] == pytest.approx(100.0)
+    assert result.loc["missing", "pct_debt_ratio_integer"] == pytest.approx(100.0)
+    assert result.loc["positive", "pct_debt_ratio_gt_1"] == pytest.approx(100 / 3)
+    assert result.loc["positive", "pct_debt_ratio_integer"] == pytest.approx(0.0)
+    assert result.loc["positive", "default_rate"] == pytest.approx(1 / 3)

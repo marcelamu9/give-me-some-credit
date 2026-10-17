@@ -120,15 +120,16 @@ sub-proyecto 2** (p. ej. tratamiento de 96/98, imputación de `MonthlyIncome`, o
 
 ## 9.1 Enmienda (2026-10-17, tras la ejecución)
 
-Petición de la usuaria, para decidir entre tratar o eliminar en el sub-proyecto 2:
-
-- Ver en el notebook **las filas** de los grupos contradictorios y de cada chequeo de dominio.
-  Esto reemplaza, solo para esas celdas de la Fase 1, la regla del plan de no mostrar filas de
-  datos; la usuaria acepta que esas filas queden versionadas (repo privado).
-- Añadido por Claude: perfil por chequeo (filas, % del total, tasa de mora frente a la base,
-  positivos en juego) y solapamiento de los códigos 96/98 entre las tres variables de atraso.
-- Nuevas funciones en `quality.py`: `conflicting_duplicate_rows`, `domain_issue_rows`,
-  `domain_issue_profile`, `past_due_code_overlap`. Sigue sin aplicarse ningún tratamiento.
+1. La usuaria pidió ver en el notebook las filas de los grupos contradictorios y de cada chequeo
+   de dominio. Se implementó y, tras revisar el perfil agregado, **se retiró**: no hacía falta ver
+   filas para decidir. Se mantiene la regla de no mostrar filas de datos.
+2. Se conserva (añadido por Claude): perfil por chequeo de dominio (`domain_issue_profile`:
+   filas, % del total, tasa de mora frente a la base, positivos en juego) y solapamiento de los
+   códigos 96/98 (`past_due_code_overlap`).
+3. Se añade a la Fase 2: `DebtRatio` según el estado del ingreso (`debt_ratio_by_income_status`),
+   para respaldar con evidencia que sin ingreso la columna guarda un monto y no un ratio.
+4. Decisiones preliminares de la usuaria para el sub-proyecto 2, registradas en
+   `docs/eda_findings.md`: conservar los duplicados contradictorios y las filas 96/98.
 
 ## 10. Lo que queda al criterio de quien implemente
 

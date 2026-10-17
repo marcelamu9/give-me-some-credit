@@ -3,11 +3,9 @@ import pytest
 
 from credit_risk.data.quality import (
     check_schema,
-    conflicting_duplicate_rows,
     count_conflicting_duplicate_groups,
     count_exact_duplicates,
     domain_issue_profile,
-    domain_issue_rows,
     domain_issues,
     drop_exact_duplicates,
     dtype_report,
@@ -95,27 +93,6 @@ def test_duplicate_functions_do_not_mutate(raw_frame, function):
     before = raw_frame.copy()
     function(raw_frame)
     assert raw_frame.equals(before)
-
-
-def test_conflicting_duplicate_rows_returns_groups(raw_frame):
-
-    rows = conflicting_duplicate_rows(raw_frame, TARGET)
-    assert sorted(rows.index.tolist()) == [3, 4, 6, 7, 8]
-    assert rows["group"].nunique() == 2
-    groups = rows.groupby("group").apply(lambda g: sorted(g.index.tolist())).tolist()
-    assert sorted(groups) == [[3, 4], [6, 7, 8]]
-
-
-@pytest.mark.parametrize("check", ["age < 18", "code 96/98", "== 0", "> 1"])
-def test_domain_issue_rows(raw_frame, check):
-
-    assert domain_issue_rows(raw_frame, check).index.tolist() == [5]
-
-
-def test_domain_issue_rows_rejects_unknown_check(raw_frame):
-
-    with pytest.raises(ValueError, match="Unknown check"):
-        domain_issue_rows(raw_frame, "age > 200")
 
 
 def test_domain_issue_profile(raw_frame):

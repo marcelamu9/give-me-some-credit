@@ -73,3 +73,24 @@ def default_rate_by_decile(df: pd.DataFrame, column: str, target: str, q: int = 
         )
         table = pd.concat([table, extra], ignore_index=True)
     return table[["bin", "rows", "default_rate"]]
+
+
+def debt_ratio_by_income_status(df: pd.DataFrame, target: str) -> pd.DataFrame:
+    """DebtRatio behaviour by MonthlyIncome status (missing / zero / positive).
+
+    Without income the ratio cannot be computed; an integer-valued DebtRatio there suggests the
+    column holds a monthly amount instead of a ratio.
+    """
+    income = df["MonthlyIncome"]
+    statuses = {"missing": income.isna(), "zero": income == 0, "positive": income > 0}
+    rows = {}
+    for status, mask in statuses.items():
+        ratio = df.loc[mask, "DebtRatio"]
+        rows[status] = {
+            "rows": int(mask.sum()),
+            "debt_ratio_median": float(ratio.median()),
+            "pct_debt_ratio_gt_1": 100 * float((ratio > 1).mean()),
+            "pct_debt_ratio_integer": 100 * float((ratio % 1 == 0).mean()),
+            "default_rate": float(df.loc[mask, target].mean()),
+        }
+    return pd.DataFrame.from_dict(rows, orient="index")

@@ -36,7 +36,7 @@ Este documento diagnostica: no se imputó, recortó ni recodificó nada.
 
 Única acción: eliminar los 609 duplicados exactos (150.000 → 149.391 filas).
 
-### Perfil de los casos de dominio y duplicados contradictorios (enmienda 2026-10-17)
+### Perfil de los casos de dominio (enmienda 2026-10-17)
 
 Tasa de mora base del archivo completo: 6,68 %. "Positivos" = casos de mora que se perderían si se eliminaran esas filas.
 
@@ -48,11 +48,15 @@ Tasa de mora base del archivo completo: 6,68 %. "Positivos" = casos de mora que 
 | `RevolvingUtilization…` > 1 | 3.321 | 2,21 % | **37,3 %** | 1.237 |
 | `DebtRatio` > 1 | 35.137 | 23,42 % | 6,5 % | 2.291 |
 
-- **Los 96/98 van juntos:** las 269 filas tienen el código en las tres variables de atraso a la vez (y siempre el mismo código en las tres). Es un registro especial, no tres errores independientes.
+- **Los 96/98 van juntos:** las 269 filas tienen el código en las tres variables de atraso a la vez. Es un registro especial, no tres errores independientes.
 - **Las filas 96/98 son de muy alto riesgo** (54,6 % de mora, 8 veces la base). Eliminarlas quitaría 147 positivos y una señal fuerte: apunta a **tratarlas** (por ejemplo, indicador propio), no a borrarlas.
 - **`RevolvingUtilization…` > 1 también concentra riesgo** (37,3 %, 1.237 positivos): eliminarlas sería muy costoso; los valores extremos se tratan, no se descartan.
-- **`DebtRatio` > 1 es demasiado frecuente (23 %) y con mora normal** como para ser un error: es una característica de la distribución.
-- **Duplicados contradictorios:** 145 filas en 37 grupos, 47 positivos. 137 de esas filas no tienen `MonthlyIncome`, y 10 de los 37 grupos (39 filas) son además registros 96/98 (perfiles casi vacíos: edad, códigos y ceros). Parecen registros con poca información más que errores de captura.
+- **`DebtRatio` > 1 no indica sobreendeudamiento en la mayoría de los casos:** cuando falta el ingreso, `DebtRatio` guarda un monto y no un ratio (ver "`DebtRatio` según el estado del ingreso" en la Fase 2).
+
+### Decisiones preliminares de la usuaria (insumo para la spec del sub-proyecto 2)
+
+1. **Duplicados contradictorios (37 grupos): se conservan.** Son clientes distintos con las mismas variables de negocio; solo sería preocupante si coincidieran datos de identidad (nombre, documento). Que perfiles iguales tengan distinto resultado es justo lo que modela una probabilidad.
+2. **Filas con códigos 96/98: se conservan.** Concentran mucha mora y un cliente nuevo con ese código debe recibir ese riesgo. Queda por definir en el sub-proyecto 2 *cómo* se codifican (p. ej. indicador propio + recodificar el conteo), para que la regresión logística no lea 98 como "98 atrasos".
 
 ## 3. Split
 
@@ -79,6 +83,16 @@ Tasa de mora base del archivo completo: 6,68 %. "Positivos" = casos de mora que 
 - Las variables de atraso tienen p99 de 2 o 3 y máximo 98 (el código de "desconocido").
 - Fuera de 1,5·IQR: `DebtRatio` 20.051 filas y `NumberOfTime30-59…` 15.239, porque casi todo son ceros y cualquier valor positivo cuenta como atípico.
 
+### `DebtRatio` según el estado del ingreso
+| Ingreso | Filas | `DebtRatio` mediano | % `DebtRatio` > 1 | % `DebtRatio` entero | Tasa de mora |
+|---|---|---|---|---|---|
+| Sin dato | 18.736 | 1.204 | 95,6 % | 100 % | 5,5 % |
+| = 0 | 1.048 | 958,5 | 93,6 % | 100 % | 4,1 % |
+| > 0 | 75.825 | 0,29 | 4,7 % | 2,2 % | 7,0 % |
+
+- Sin ingreso (nulo o 0), `DebtRatio` es **siempre entero y del orden de miles**: la columna guarda un **monto mensual de deuda**, no un ratio. Con ingreso positivo sí es un ratio (mediana 0,29).
+- Por eso los máximos y la mayoría de los `DebtRatio` > 1 no son clientes sobreendeudados: son otra variable en la misma columna.
+
 ### Distribuciones
 - Histogramas por target en `reports/figures/dist_<variable>.png` (escala `log1p` en los ratios y en `MonthlyIncome`), por ejemplo [dist_age.png](../reports/figures/dist_age.png).
 
@@ -96,11 +110,11 @@ Tasa de mora base del archivo completo: 6,68 %. "Positivos" = casos de mora que 
 
 ## 5. Preguntas abiertas para el sub-proyecto 2
 
-1. Códigos 96/98 en las 3 variables de atraso (269 filas, siempre juntos, 54,6 % de mora): ¿indicador propio + recodificar los conteos, o categoría aparte? Eliminar perdería 147 positivos.
+1. Códigos 96/98 (269 filas, siempre juntos, 54,6 % de mora): **se conservan** (decisión preliminar). ¿Cómo codificarlos: indicador propio + recodificar el conteo, o categoría aparte?
 2. `MonthlyIncome`: ¿imputar o añadir indicador de nulo (la mora es menor entre los nulos)? ¿Qué hacer con los 1.634 ceros?
 3. `NumberOfDependents`: nulos informativos (4,45 % de mora); ¿imputar con 0 o con indicador?
-4. Ratios con valores extremos (`RevolvingUtilization…`, `DebtRatio`): ¿recorte por percentil o transformación?
+4. Ratios con valores extremos: ¿recorte por percentil o transformación para `RevolvingUtilization…`? Para `DebtRatio`, ¿separar en dos variables (ratio cuando hay ingreso, monto cuando no) o tratar según el estado del ingreso?
 5. `age` < 18 (1 fila): ¿filtrar?
-6. Duplicados contradictorios (37 grupos, 145 filas, 47 positivos, casi todos sin `MonthlyIncome`) y 19 combinaciones repetidas entre particiones: ¿conservar (son pocos y parecen perfiles con poca información) o eliminar? ¿Efecto sobre la evaluación?
+6. Duplicados contradictorios: **se conservan** (decisión preliminar). Queda abierto el efecto de las 19 combinaciones repetidas entre particiones sobre la evaluación.
 7. Variables correlacionadas (apertura de créditos, préstamos inmobiliarios, ingreso): ¿aportan información redundante?
 8. Variables de atraso casi constantes: ¿agrupar en tramos para analizar su relación con el riesgo?
