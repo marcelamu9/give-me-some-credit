@@ -132,12 +132,12 @@ Rangos exactos de los espacios de búsqueda (razonables para cada modelo y con t
 
 ## 11. Criterios de aceptación
 
-- [ ] `uv run poe check` pasa; tests con datos sintéticos para cada transformador, métrica y función de decisión.
-- [ ] Ningún transformador usa estadísticas de valid/test (test explícito: ajustar con un DataFrame y transformar otro no cambia lo aprendido).
-- [ ] `uv run poe train` termina, registra los 3 candidatos en MLflow y genera `reports/model_comparison.md` y `models/champion_metadata.json`.
-- [ ] Re-ejecutar `uv run poe train` con la misma semilla produce el mismo campeón, los mismos umbrales y las mismas métricas.
-- [ ] El campeón se elige por costo esperado en valid según §5, y la tabla de comparación lo muestra.
-- [ ] El test se usa una sola vez (visible en el código del script).
-- [ ] `notebooks/02-modelado.ipynb` se ejecuta de punta a punta.
-- [ ] `docs/model_card.md` y `ADR-002` existen y solo citan cifras de la ejecución real.
-- [ ] `AGENTS.md` apunta a esta spec y a su plan como activos.
+- [x] `uv run poe check` pasa; tests con datos sintéticos para cada transformador, métrica y función de decisión.
+- [x] Ningún transformador usa estadísticas de valid/test (test explícito: ajustar con un DataFrame y transformar otro no cambia lo aprendido). *El test explícito cubre `IncomeImputer`; `RatioTreatment` y `LogisticScaling` aprenden solo en `fit` por construcción.*
+- [x] `uv run poe train` termina, registra los 3 candidatos en MLflow y genera `reports/model_comparison.md` y `models/champion_metadata.json`.
+- [x] Re-ejecutar `uv run poe train` con la misma semilla produce el mismo campeón, los mismos umbrales y las mismas métricas. *Verificado en dos ejecuciones; solo difiere 1e-17 en el Brier de test (suma multihilo del Random Forest).*
+- [x] El campeón se elige por costo esperado en valid según §5, y la tabla de comparación lo muestra.
+- [x] El test se usa una sola vez (visible en el código del script).
+- [x] `notebooks/02-modelado.ipynb` se ejecuta de punta a punta.
+- [x] `docs/model_card.md` y `ADR-002` existen y solo citan cifras de la ejecución real.
+- [x] `AGENTS.md` apunta a esta spec y a su plan como activos.
