@@ -135,10 +135,10 @@ Nombres originales de Kaggle con alias; `MonthlyIncome` y `NumberOfDependents` o
 
 ## 10. Criterios de aceptación
 
-- [ ] `uv run poe check` pasa, incluidos los tests de la API sin el modelo real.
-- [ ] `uv run poe serve` arranca y `/docs` muestra los 3 endpoints y los 3 ejemplos.
-- [ ] Contra el modelo real: `low_risk` → `approve`; `same_client_with_delays` → `review` o `reject`; `invalid_age` → 422.
-- [ ] La probabilidad de `/predict` coincide con `model.predict_proba` del artefacto para la misma fila.
-- [ ] Las razones salen del promedio de las 5 copias (test explícito).
-- [ ] `README.md` explica cómo arrancar la API y el guion de la demo.
-- [ ] `AGENTS.md` apunta a esta spec y a su plan como activos.
+- [x] `uv run poe check` pasa, incluidos los tests de la API sin el modelo real.
+- [x] `uv run poe serve` arranca y `/docs` muestra los 3 endpoints y los 3 ejemplos.
+- [x] Contra el modelo real: `low_risk` → `approve`; `same_client_with_delays` → `review` o `reject`; `invalid_age` → 422.
+- [x] La probabilidad de `/predict` coincide con `model.predict_proba` del artefacto para la misma fila.
+- [x] Las razones salen del promedio de las 5 copias (test explícito).
+- [x] `README.md` explica cómo arrancar la API y el guion de la demo.
+- [x] `AGENTS.md` apunta a esta spec y a su plan como activos.
