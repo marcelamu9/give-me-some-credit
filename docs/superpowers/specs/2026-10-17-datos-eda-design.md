@@ -130,6 +130,11 @@ sub-proyecto 2** (p. ej. tratamiento de 96/98, imputación de `MonthlyIncome`, o
    para respaldar con evidencia que sin ingreso la columna guarda un monto y no un ratio.
 4. Decisiones preliminares de la usuaria para el sub-proyecto 2, registradas en
    `docs/eda_findings.md`: conservar los duplicados contradictorios y las filas 96/98.
+5. Segunda ampliación, para respaldar las decisiones de tratamiento de la usuaria: `describe` de las
+   variables; mediana del ingreso por decil de edad y por número de dependientes (`median_by`,
+   `plot_median_by`), correlación y solapamiento de nulos (`missing_overlap`); `DebtRatio` con
+   ingreso positivo (`debt_ratio_profile_with_income`). Las decisiones de tratamiento quedan
+   registradas en `docs/eda_findings.md` como insumo de la spec del sub-proyecto 2; aquí no se aplican.
 
 ## 10. Lo que queda al criterio de quien implemente
 

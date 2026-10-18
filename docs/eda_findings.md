@@ -56,7 +56,13 @@ Tasa de mora base del archivo completo: 6,68 %. "Positivos" = casos de mora que 
 ### Decisiones preliminares de la usuaria (insumo para la spec del sub-proyecto 2)
 
 1. **Duplicados contradictorios (37 grupos): se conservan.** Son clientes distintos con las mismas variables de negocio; solo sería preocupante si coincidieran datos de identidad (nombre, documento). Que perfiles iguales tengan distinto resultado es justo lo que modela una probabilidad.
-2. **Filas con códigos 96/98: se conservan.** Concentran mucha mora y un cliente nuevo con ese código debe recibir ese riesgo. Queda por definir en el sub-proyecto 2 *cómo* se codifican (p. ej. indicador propio + recodificar el conteo), para que la regresión logística no lea 98 como "98 atrasos".
+2. **Códigos 96/98: se conservan y se recodifican.** Indicador binario (una sola columna, porque el código aparece en las tres variables a la vez) y los tres conteos con 96/98 pasan a 0. El indicador conserva la señal de riesgo (54,6 % de mora); sin él, el 0 diría "nunca se atrasó". Nombre propuesto, en inglés según `AGENTS.md`: `has_special_past_due_code`.
+3. **`MonthlyIncome`: imputar con la mediana por grupos de edad y número de dependientes**, más un indicador `monthly_income_missing` (el nulo es informativo). Medianas calculadas solo con train, dentro del pipeline. Como los nulos de dependientes están siempre dentro de los de ingreso, hace falta un respaldo (solo tramo de edad).
+4. **`RevolvingUtilization…`: recorte en el p99 del train** (1,094). Los valores entre 1 y el p99 (sobregiro real, de alto riesgo) se mantienen.
+5. **`DebtRatio`: opción B.**
+   - Indicador `debt_ratio_is_amount = 1` cuando `MonthlyIncome` es nulo o 0 (definido por el estado del ingreso, no por un umbral, y creado **antes** de imputar).
+   - En esas filas, el ratio se recalcula como monto ÷ ingreso imputado.
+   - Con ingreso positivo, el ratio se recorta en su p99 del train (≈ 2,857). No se marca `DebtRatio` > 1 como error: con ingreso hay 3.535 filas así y su mora es 11,4 % frente a 6,8 %.
 
 ## 3. Split
 
@@ -93,6 +99,20 @@ Tasa de mora base del archivo completo: 6,68 %. "Positivos" = casos de mora que 
 - Sin ingreso (nulo o 0), `DebtRatio` es **siempre entero y del orden de miles**: la columna guarda un **monto mensual de deuda**, no un ratio. Con ingreso positivo sí es un ratio (mediana 0,29).
 - Por eso los máximos y la mayoría de los `DebtRatio` > 1 no son clientes sobreendeudados: son otra variable en la misma columna.
 
+#### `DebtRatio` con ingreso positivo
+- 75.825 filas; 3.535 con `DebtRatio` > 1 y **11,4 % de mora** (frente a 6,8 % con ≤ 1): gastar más de lo que se gana es señal de riesgo, no un error.
+- Cola: p95 0,968; p99 2,857; **p99,9 1.361,85**; máximo 61.106,5. El salto del p99 al p99,9 indica que incluso con ingreso hay algún monto guardado como ratio; recortar en el p99 lo deja fuera.
+
+### Estadística descriptiva
+- Tabla `describe` completa en el notebook. Medias muy por encima de las medianas en `RevolvingUtilization…` (6,41 vs 0,154), `DebtRatio` (357 vs 0,367) y `MonthlyIncome` (6.689 vs 5.416): colas extremas.
+- `NumberOfDependents` llega a 13; `NumberOfOpenCreditLinesAndLoans` a 58 y `NumberRealEstateLoansOrLines` a 54 (colas largas en variables de conteo).
+
+### Ingreso según edad y dependientes (insumo para imputar)
+- Spearman de `MonthlyIncome` con `age` 0,135 y con `NumberOfDependents` 0,205: bajos, pero **Spearman solo mide relaciones monótonas**.
+- **Con la edad la relación tiene forma de U invertida:** mediana 3.300 hasta 33 años, máxima ≈ 6.400 entre 48 y 56, y 4.333,5 a partir de 72. La diferencia entre tramos es de casi el doble. Figura: [income_by_age.png](../reports/figures/income_by_age.png).
+- **Con los dependientes crece:** 4.800 (0) → 5.900 (1) → 6.250 (2) → 6.700 (3) → 7.082 (4). A partir de 6 dependientes hay menos de 100 filas por grupo (conviene agrupar, p. ej., "4 o más"). Figura: [income_by_dependents.png](../reports/figures/income_by_dependents.png).
+- **Nulos:** los 2.451 nulos de `NumberOfDependents` están todos entre los 18.736 de `MonthlyIncome`. El % de ingreso faltante sube con la edad (13,9 % en el primer decil, 31,0 % en el último) y es mayor sin dependientes (24,4 % frente a 7–8 %).
+
 ### Distribuciones
 - Histogramas por target en `reports/figures/dist_<variable>.png` (escala `log1p` en los ratios y en `MonthlyIncome`), por ejemplo [dist_age.png](../reports/figures/dist_age.png).
 
@@ -110,11 +130,15 @@ Tasa de mora base del archivo completo: 6,68 %. "Positivos" = casos de mora que 
 
 ## 5. Preguntas abiertas para el sub-proyecto 2
 
-1. Códigos 96/98 (269 filas, siempre juntos, 54,6 % de mora): **se conservan** (decisión preliminar). ¿Cómo codificarlos: indicador propio + recodificar el conteo, o categoría aparte?
-2. `MonthlyIncome`: ¿imputar o añadir indicador de nulo (la mora es menor entre los nulos)? ¿Qué hacer con los 1.634 ceros?
-3. `NumberOfDependents`: nulos informativos (4,45 % de mora); ¿imputar con 0 o con indicador?
-4. Ratios con valores extremos: ¿recorte por percentil o transformación para `RevolvingUtilization…`? Para `DebtRatio`, ¿separar en dos variables (ratio cuando hay ingreso, monto cuando no) o tratar según el estado del ingreso?
+Decididas (ver "Decisiones preliminares" en la sección 2): códigos 96/98, imputación de `MonthlyIncome`, recorte de `RevolvingUtilization…`, tratamiento de `DebtRatio` y conservación de los duplicados contradictorios.
+
+Siguen abiertas:
+
+1. `NumberOfDependents` (2.451 nulos, todos sin ingreso, 4,45 % de mora): ¿imputar con 0 o con la mediana? ¿Basta con el indicador `monthly_income_missing`, que ya los cubre?
+2. `MonthlyIncome` extremo (máximo 3.008.750; p99 25.000): ¿recortar en el p99?
+3. `MonthlyIncome` = 0 (1.048 filas en train, 4,1 % de mora): ¿tratar como nulo para imputar o como ingreso real?
+4. Agrupación para imputar: ¿deciles de edad × dependientes (con "4 o más")? ¿Qué respaldo cuando el grupo no existe en train?
 5. `age` < 18 (1 fila): ¿filtrar?
-6. Duplicados contradictorios: **se conservan** (decisión preliminar). Queda abierto el efecto de las 19 combinaciones repetidas entre particiones sobre la evaluación.
-7. Variables correlacionadas (apertura de créditos, préstamos inmobiliarios, ingreso): ¿aportan información redundante?
-8. Variables de atraso casi constantes: ¿agrupar en tramos para analizar su relación con el riesgo?
+6. Variables de conteo con colas largas (créditos abiertos hasta 58, inmobiliarios hasta 54): ¿recortar para la logística? (a los árboles no les afecta).
+7. Efecto de las 19 combinaciones de variables repetidas entre particiones sobre la evaluación.
+8. Variables correlacionadas (créditos abiertos, inmobiliarios, ingreso): ¿información redundante?

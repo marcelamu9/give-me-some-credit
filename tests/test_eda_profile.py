@@ -4,7 +4,10 @@ import pytest
 
 from credit_risk.eda.profile import (
     debt_ratio_by_income_status,
+    debt_ratio_profile_with_income,
     default_rate_by_decile,
+    median_by,
+    missing_overlap,
     missing_summary,
     outlier_counts,
     percentile_table,
@@ -114,3 +117,52 @@ def test_debt_ratio_by_income_status():
     assert result.loc["positive", "pct_debt_ratio_gt_1"] == pytest.approx(100 / 3)
     assert result.loc["positive", "pct_debt_ratio_integer"] == pytest.approx(0.0)
     assert result.loc["positive", "default_rate"] == pytest.approx(1 / 3)
+
+
+def test_median_by_exact_values():
+    df = pd.DataFrame({"g": [0, 0, 1, 1, 1], "v": [10.0, 20.0, 5.0, np.nan, 7.0]})
+    result = median_by(df, "v", "g")
+    assert result["bin"].tolist() == ["0", "1"]
+    assert result["rows"].tolist() == [2, 3]
+    assert result["median"].tolist() == [15.0, 6.0]
+    assert result["missing_pct"].tolist() == pytest.approx([0.0, 100 / 3])
+
+
+def test_median_by_quantile_bins_and_missing_group():
+    df = pd.DataFrame({"g": [*range(1, 21), np.nan], "v": [*range(1, 21), 99.0]})
+    result = median_by(df, "v", "g", q=4)
+    assert len(result) == 5
+    assert result["bin"].iloc[-1] == "missing"
+    assert result["median"].iloc[-1] == 99.0
+    assert result["rows"].sum() == 21
+
+
+def test_missing_overlap():
+    df = pd.DataFrame({"a": [np.nan, np.nan, 1.0, 2.0], "b": [np.nan, 1.0, 1.0, np.nan]})
+    assert missing_overlap(df, "a", "b") == {"a_missing": 2, "b_missing": 2, "both": 1}
+
+
+def test_debt_ratio_profile_with_income():
+    df = pd.DataFrame(
+        {
+            "MonthlyIncome": [np.nan, 0.0, *[1000.0] * 10],
+            "DebtRatio": [5000.0, 900.0, *[0.1 * i for i in range(1, 9)], 1.5, 3.0],
+            "y": [1, 1, *[0] * 8, 1, 0],
+        }
+    )
+    result = debt_ratio_profile_with_income(df, "y")
+    assert result["rows"] == 10
+    assert result["rows_gt_1"] == 2
+    assert result["default_rate_gt_1"] == pytest.approx(0.5)
+    assert result["default_rate_le_1"] == pytest.approx(0.0)
+    assert result["max"] == 3.0
+    assert set(result) == {
+        "rows",
+        "rows_gt_1",
+        "default_rate_gt_1",
+        "default_rate_le_1",
+        "p95",
+        "p99",
+        "p99_9",
+        "max",
+    }

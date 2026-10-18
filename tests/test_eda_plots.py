@@ -8,6 +8,7 @@ from credit_risk.eda.plots import (
     plot_correlation_heatmap,
     plot_default_rate_by_decile,
     plot_distribution_by_target,
+    plot_median_by,
     plot_missing,
     plot_target_distribution,
     save_figure,
@@ -77,3 +78,13 @@ def test_save_figure(tmp_path, frame):
     path = save_figure(fig, tmp_path / "sub" / "f.png")
     assert path.is_file() and path.stat().st_size > 0
     assert not plt.fignum_exists(fig.number)
+
+
+def test_plot_median_by_uses_log_scale():
+    table = pd.DataFrame(
+        {"bin": ["a", "b", "missing"], "rows": [3, 4, 2], "median": [10.0, 1000.0, np.nan]}
+    )
+    fig = plot_median_by(table, "MonthlyIncome", "age")
+    assert isinstance(fig, Figure)
+    assert fig.axes[0].get_yscale() == "log"
+    plt.close(fig)

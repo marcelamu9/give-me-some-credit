@@ -94,3 +94,58 @@ def debt_ratio_by_income_status(df: pd.DataFrame, target: str) -> pd.DataFrame:
             "default_rate": float(df.loc[mask, target].mean()),
         }
     return pd.DataFrame.from_dict(rows, orient="index")
+
+
+def _bin_label(value: object) -> str:
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    return str(value)
+
+
+def median_by(df: pd.DataFrame, value: str, by: str, q: int | None = None) -> pd.DataFrame:
+    """Median of `value` per group of `by` (exact values, or `q` quantile bins); NaN group last."""
+    has_group = df[by].notna()
+    keys = pd.qcut(df.loc[has_group, by], q=q, duplicates="drop") if q else df.loc[has_group, by]
+    rows = []
+    for key, group in df.loc[has_group, value].groupby(keys, observed=True, sort=True):
+        rows.append((_bin_label(key), group))
+    if (~has_group).any():
+        rows.append(("missing", df.loc[~has_group, value]))
+    return pd.DataFrame(
+        [
+            {
+                "bin": label,
+                "rows": len(values),
+                "median": float(values.median()),
+                "missing_pct": 100 * float(values.isna().mean()),
+            }
+            for label, values in rows
+        ]
+    )
+
+
+def missing_overlap(df: pd.DataFrame, a: str, b: str) -> dict[str, int]:
+    """How many rows miss `a`, miss `b`, and miss both."""
+    a_missing, b_missing = df[a].isna(), df[b].isna()
+    return {
+        "a_missing": int(a_missing.sum()),
+        "b_missing": int(b_missing.sum()),
+        "both": int((a_missing & b_missing).sum()),
+    }
+
+
+def debt_ratio_profile_with_income(df: pd.DataFrame, target: str) -> dict[str, float | int]:
+    """DebtRatio among rows with positive income: how many exceed 1, their risk, and the tail."""
+    with_income = df[df["MonthlyIncome"] > 0]
+    ratio = with_income["DebtRatio"]
+    over_one = ratio > 1
+    return {
+        "rows": len(with_income),
+        "rows_gt_1": int(over_one.sum()),
+        "default_rate_gt_1": float(with_income.loc[over_one, target].mean()),
+        "default_rate_le_1": float(with_income.loc[~over_one, target].mean()),
+        "p95": float(ratio.quantile(0.95)),
+        "p99": float(ratio.quantile(0.99)),
+        "p99_9": float(ratio.quantile(0.999)),
+        "max": float(ratio.max()),
+    }

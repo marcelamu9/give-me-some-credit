@@ -67,6 +67,19 @@ def plot_correlation_heatmap(corr: pd.DataFrame) -> Figure:
     return fig
 
 
+def plot_median_by(table: pd.DataFrame, value: str, by: str) -> Figure:
+    """Median of `value` per group of `by` (output of `median_by`), log scale on the y axis."""
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.plot(range(len(table)), table["median"], marker="o")
+    ax.set_xticks(range(len(table)), labels=list(table["bin"]), rotation=60, ha="right")
+    ax.set_yscale("log")
+    ax.set_xlabel(by)
+    ax.set_ylabel(f"mediana de {value} (log)")
+    ax.set_title(f"Mediana de {value} por {by}")
+    fig.tight_layout()
+    return fig
+
+
 def plot_default_rate_by_decile(table: pd.DataFrame, column: str) -> Figure:
     fig, ax = plt.subplots(figsize=(8, 4))
     ax.bar(range(len(table)), table["default_rate"])
