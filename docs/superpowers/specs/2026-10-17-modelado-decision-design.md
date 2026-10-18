@@ -86,7 +86,7 @@ Orden del pipeline común: eliminar `age < 18` (antes del pipeline) → indicado
 - **Métricas en valid** para cada candidato calibrado: ROC-AUC, Gini, KS, PR-AUC, Brier y **costo esperado por cliente** (con el umbral óptimo binario de §6).
 - **Criterio de selección (defendible frente al negocio):**
   1. Menor **costo esperado por cliente** en valid (matriz FN = 5, FP = 1 de `params.yaml`).
-  2. Si dos modelos difieren en menos de **2 %** de costo, gana el más simple/rápido (logística < RF < LightGBM en complejidad), salvo que su Brier sea peor en más de 10 %.
+  2. ~~Si dos modelos difieren en menos de **2 %** de costo, gana el más simple/rápido (logística < RF < LightGBM en complejidad), salvo que su Brier sea peor en más de 10 %.~~ Reemplazado por la enmienda 10.1.
   3. Se documenta en un ADR (`docs/decisions/ADR-002-seleccion-modelo.md`) por qué AUC guía la búsqueda (no depende del umbral, es estable) pero el **costo** decide.
 
 ## 6. Política de decisión (3 bandas)
@@ -129,6 +129,18 @@ Rangos exactos de los espacios de búsqueda (razonables para cada modelo y con t
 1. Umbrales aprendidos en la metadata versionada del modelo; `params.yaml` guarda solo las entradas de negocio. Se enmienda el principio 7 de la constitución y `docs/business_context.md`.
 2. `review_capacity = 10 %` como supuesto (como el 5:1), con sensibilidad a 5 %, 10 % y 20 %.
 3. Eliminar `age < 18` de las tres particiones.
+
+## 10.1 Enmienda: regla de selección (2026-10-17, tras la revisión)
+
+La revisión final detectó que el orden "logística < Random Forest < LightGBM" no medía complejidad
+real: eligió Random Forest, peor que LightGBM en costo, AUC, KS y Brier, y con 4,8 veces su latencia
+(179,6 ms frente a 37,6 ms por cliente). Eso contradice el objetivo de "tiempos y costos" (§1). El
+error fue de esta spec (decisión de Claude), no de la implementación. Nueva regla, aprobada por la usuaria:
+
+- **Elegibles:** modelos a menos de **2 %** del menor costo esperado en valid y cuyo Brier no sea más
+  de **10 %** peor que el del modelo de menor costo.
+- **Entre los elegibles:** gana la **regresión logística** si está (interpretable); si no, el de
+  **menor latencia de predicción** (más barato de operar), con el costo como desempate.
 
 ## 11. Criterios de aceptación
 

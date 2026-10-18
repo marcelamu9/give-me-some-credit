@@ -4,7 +4,7 @@ import pytest
 
 from credit_risk.data.schema import FEATURES
 from credit_risk.models.candidates import (
-    COMPLEXITY_ORDER,
+    CANDIDATE_NAMES,
     calibrate,
     candidate_specs,
     prediction_latency_ms,
@@ -40,14 +40,14 @@ def make_xy(n: int = 1500, seed: int = 0) -> tuple[pd.DataFrame, pd.Series]:
 
 def test_candidate_specs_names_and_steps():
     specs = candidate_specs(seed=0)
-    assert tuple(specs) == COMPLEXITY_ORDER
+    assert tuple(specs) == CANDIDATE_NAMES
     for pipeline, distributions in specs.values():
         assert pipeline.steps[-1][0] == "model"
         assert distributions
         assert all(key.startswith("model__") for key in distributions)
 
 
-@pytest.mark.parametrize("name", COMPLEXITY_ORDER)
+@pytest.mark.parametrize("name", CANDIDATE_NAMES)
 def test_search_candidate_runs_on_small_data(name):
     X, y = make_xy()
     pipeline, distributions = candidate_specs(seed=0)[name]

@@ -42,9 +42,10 @@ LATENCY_ROWS = 200
 LATENCY_REPEATS = 3
 LIBRARIES = ("scikit-learn", "lightgbm", "pandas", "numpy", "mlflow", "shap")
 SELECTION_RULE = (
-    "menor costo esperado por cliente en validación; entre los modelos a menos de 2 % de ese "
-    "costo gana el más simple (logística < Random Forest < LightGBM), salvo que su Brier sea "
-    "más de 10 % peor que el del modelo de menor costo."
+    "menor costo esperado por cliente en validación; son elegibles los modelos a menos de 2 % de "
+    "ese costo cuyo Brier no sea más de 10 % peor que el del modelo de menor costo; entre ellos "
+    "gana la regresión logística (interpretable) y, si no es elegible, el de menor latencia de "
+    "predicción (más barato de operar)."
 )
 
 
@@ -136,6 +137,7 @@ def run_training(cfg: Config, tracking_uri: str | None = None) -> dict:
             "model": list(candidates),
             "expected_cost": [c["valid_expected_cost"] for c in candidates.values()],
             "brier": [c["valid_metrics"]["brier"] for c in candidates.values()],
+            "latency_ms": [c["latency_ms"] for c in candidates.values()],
         }
     )
     champion = select_champion(comparison)

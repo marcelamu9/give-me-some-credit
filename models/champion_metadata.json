@@ -1,6 +1,6 @@
 {
-  "champion": "random_forest",
-  "selection_rule": "menor costo esperado por cliente en validación; entre los modelos a menos de 2 % de ese costo gana el más simple (logística < Random Forest < LightGBM), salvo que su Brier sea más de 10 % peor que el del modelo de menor costo.",
+  "champion": "lightgbm",
+  "selection_rule": "menor costo esperado por cliente en validación; son elegibles los modelos a menos de 2 % de ese costo cuyo Brier no sea más de 10 % peor que el del modelo de menor costo; entre ellos gana la regresión logística (interpretable) y, si no es elegible, el de menor latencia de predicción (más barato de operar).",
   "features": [
     "RevolvingUtilizationOfUnsecuredLines",
     "age",
@@ -28,8 +28,8 @@
     "income_unavailable"
   ],
   "thresholds": {
-    "t_star": 0.175,
-    "t_low": 0.08104997232148747,
+    "t_star": 0.14,
+    "t_low": 0.07251224230445355,
     "bayes_threshold": 0.16666666666666666
   },
   "costs": {
@@ -45,9 +45,9 @@
       },
       "cv_auc_mean": 0.8533848299885696,
       "cv_auc_std": 0.0038899876391020223,
-      "search_seconds": 32.67382309999812,
-      "calibration_seconds": 1.694289499999286,
-      "latency_ms": 49.02003100000002,
+      "search_seconds": 35.094850600002246,
+      "calibration_seconds": 1.6857591000007233,
+      "latency_ms": 49.456143000006705,
       "valid_metrics": {
         "roc_auc": 0.8556647376082263,
         "gini": 0.7113294752164525,
@@ -74,9 +74,9 @@
       },
       "cv_auc_mean": 0.8650429968832694,
       "cv_auc_std": 0.004095486254207221,
-      "search_seconds": 177.11401310000292,
-      "calibration_seconds": 9.137761599999067,
-      "latency_ms": 179.61442300000272,
+      "search_seconds": 202.59465699999782,
+      "calibration_seconds": 15.996037400000205,
+      "latency_ms": 447.74474399999235,
       "valid_metrics": {
         "roc_auc": 0.8659635425375058,
         "gini": 0.7319270850750117,
@@ -106,9 +106,9 @@
       },
       "cv_auc_mean": 0.8653424412220094,
       "cv_auc_std": 0.003736366333297984,
-      "search_seconds": 97.65380530000039,
-      "calibration_seconds": 2.189447500000824,
-      "latency_ms": 37.738052000004245,
+      "search_seconds": 239.8857076000022,
+      "calibration_seconds": 5.23560709999947,
+      "latency_ms": 93.89879700000165,
       "valid_metrics": {
         "roc_auc": 0.868105215269064,
         "gini": 0.7362104305381281,
@@ -129,110 +129,110 @@
   },
   "valid_bands": {
     "approve": {
-      "rows": 18918,
-      "share": 0.7914487721206543,
-      "default_rate": 0.02235965746907707
+      "rows": 18419,
+      "share": 0.7705727314563026,
+      "default_rate": 0.02084803735273359
     },
     "review": {
-      "rows": 2391,
-      "share": 0.10002928502698406,
-      "default_rate": 0.11375993308239231
+      "rows": 2395,
+      "share": 0.10019662803832155,
+      "default_rate": 0.09227557411273486
     },
     "reject": {
-      "rows": 2594,
-      "share": 0.10852194285236162,
-      "default_rate": 0.3492675404780262
+      "rows": 3089,
+      "share": 0.1292306405053759,
+      "default_rate": 0.32243444480414374
     }
   },
   "cost_sensitivity": [
     {
       "fn_fp_ratio": 3.0,
-      "t_star": 0.305,
-      "t_low": 0.1065257026640197,
-      "approval_rate": 0.9374555495126135,
-      "default_rate_approved": 0.04168154230631917,
-      "expected_cost": 0.15186378278877127
+      "t_star": 0.28,
+      "t_low": 0.10505098928505736,
+      "approval_rate": 0.9338995105216918,
+      "default_rate_approved": 0.04098911436634861,
+      "expected_cost": 0.15224030456428064
     },
     {
       "fn_fp_ratio": 5.0,
-      "t_star": 0.175,
-      "t_low": 0.08104997232148747,
-      "approval_rate": 0.8914780571476384,
-      "default_rate_approved": 0.03261532685719649,
-      "expected_cost": 0.21599799188386395
+      "t_star": 0.14,
+      "t_low": 0.07251224230445355,
+      "approval_rate": 0.8707693594946241,
+      "default_rate_approved": 0.029066974152013068,
+      "expected_cost": 0.2141153830063172
     },
     {
       "fn_fp_ratio": 10.0,
-      "t_star": 0.09,
-      "t_low": 0.057335117189236375,
-      "approval_rate": 0.8164247165627746,
-      "default_rate_approved": 0.024545221624391492,
-      "expected_cost": 0.3370288248337029
+      "t_star": 0.1,
+      "t_low": 0.05901129098329455,
+      "approval_rate": 0.8254194034221646,
+      "default_rate_approved": 0.025038013177901674,
+      "expected_cost": 0.33493703719198425
     },
     {
       "fn_fp_ratio": 20.0,
-      "t_star": 0.05,
-      "t_low": 0.029990952635629464,
-      "approval_rate": 0.6915449943521733,
-      "default_rate_approved": 0.016273442226255295,
-      "expected_cost": 0.4778061331213655
+      "t_star": 0.045,
+      "t_low": 0.027287747902161662,
+      "approval_rate": 0.6710036397104966,
+      "default_rate_approved": 0.014464742190909657,
+      "expected_cost": 0.46584110781073507
     }
   ],
   "capacity_sensitivity": [
     {
       "capacity": 0.05,
-      "t_low": 0.10958253634344502,
-      "approve_rows": 20111,
-      "approve_default_rate": 0.026801253045596937,
-      "review_rows": 1198,
-      "review_default_rate": 0.1302170283806344,
-      "reject_rows": 2594,
-      "reject_default_rate": 0.3492675404780262
+      "t_low": 0.09727113393136572,
+      "approve_rows": 19619,
+      "approve_default_rate": 0.024822875783679088,
+      "review_rows": 1195,
+      "review_default_rate": 0.09874476987447699,
+      "reject_rows": 3089,
+      "reject_default_rate": 0.32243444480414374
     },
     {
       "capacity": 0.1,
-      "t_low": 0.08104997232148747,
-      "approve_rows": 18918,
-      "approve_default_rate": 0.02235965746907707,
-      "review_rows": 2391,
-      "review_default_rate": 0.11375993308239231,
-      "reject_rows": 2594,
-      "reject_default_rate": 0.3492675404780262
+      "t_low": 0.07251224230445355,
+      "approve_rows": 18419,
+      "approve_default_rate": 0.02084803735273359,
+      "review_rows": 2395,
+      "review_default_rate": 0.09227557411273486,
+      "reject_rows": 3089,
+      "reject_default_rate": 0.32243444480414374
     },
     {
       "capacity": 0.2,
-      "t_low": 0.0499555890122896,
-      "approve_rows": 16528,
-      "approve_default_rate": 0.01627541142303969,
-      "review_rows": 4781,
-      "review_default_rate": 0.08910269818029701,
-      "reject_rows": 2594,
-      "reject_default_rate": 0.3492675404780262
+      "t_low": 0.044992439593448896,
+      "approve_rows": 16031,
+      "approve_default_rate": 0.014409581435967812,
+      "review_rows": 4783,
+      "review_default_rate": 0.07819360234162659,
+      "reject_rows": 3089,
+      "reject_default_rate": 0.32243444480414374
     }
   ],
   "test_metrics": {
-    "roc_auc": 0.8638688409198148,
-    "gini": 0.7277376818396295,
-    "ks": 0.5877179103853424,
-    "pr_auc": 0.40109368130608075,
-    "brier": 0.04900060204347502
+    "roc_auc": 0.8650337179411325,
+    "gini": 0.730067435882265,
+    "ks": 0.5891405649270556,
+    "pr_auc": 0.4009734289142995,
+    "brier": 0.04881405541928634
   },
-  "test_expected_cost": 0.21372870577997924,
+  "test_expected_cost": 0.2156029318250276,
   "test_bands": {
     "approve": {
-      "rows": 23488,
-      "share": 0.7861039526088557,
-      "default_rate": 0.02120231607629428
+      "rows": 22861,
+      "share": 0.7651193145687607,
+      "default_rate": 0.01907178163684878
     },
     "review": {
-      "rows": 3079,
-      "share": 0.10304896415542689,
-      "default_rate": 0.11302370899642741
+      "rows": 3020,
+      "share": 0.1010743331436795,
+      "default_rate": 0.10099337748344371
     },
     "reject": {
-      "rows": 3312,
-      "share": 0.11084708323571739,
-      "default_rate": 0.34903381642512077
+      "rows": 3998,
+      "share": 0.13380635228755983,
+      "default_rate": 0.31540770385192596
     }
   },
   "rows": {
@@ -255,6 +255,6 @@
     "mlflow": "3.17.1",
     "shap": "0.51.0"
   },
-  "trained_at": "2026-10-18T02:15:43+00:00",
-  "training_seconds": 482.7645928999991
+  "trained_at": "2026-10-18T02:59:33+00:00",
+  "training_seconds": 868.8067649000004
 }

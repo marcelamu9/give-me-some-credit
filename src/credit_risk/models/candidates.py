@@ -16,7 +16,7 @@ from sklearn.pipeline import Pipeline
 
 from credit_risk.features.treatment import build_preprocessor
 
-COMPLEXITY_ORDER = ("logistic", "random_forest", "lightgbm")
+CANDIDATE_NAMES = ("logistic", "random_forest", "lightgbm")
 
 
 @dataclass

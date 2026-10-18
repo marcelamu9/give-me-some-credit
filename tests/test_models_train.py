@@ -9,7 +9,7 @@ import pytest
 from credit_risk.config import Search, load_config
 from credit_risk.data.schema import COLUMNS, FEATURES, ID_NAME
 from credit_risk.models import train as train_module
-from credit_risk.models.candidates import COMPLEXITY_ORDER
+from credit_risk.models.candidates import CANDIDATE_NAMES
 from credit_risk.models.report import markdown_table
 from credit_risk.models.train import run_training
 
@@ -73,11 +73,11 @@ def test_run_training_end_to_end(cfg, tmp_path):
     assert (cfg.paths.models / "champion_metadata.json").is_file()
     assert (cfg.paths.reports / "model_comparison.md").is_file()
 
-    assert metadata["champion"] in COMPLEXITY_ORDER
+    assert metadata["champion"] in CANDIDATE_NAMES
     thresholds = metadata["thresholds"]
     assert 0 <= thresholds["t_low"] <= thresholds["t_star"]
     assert thresholds["bayes_threshold"] == pytest.approx(1 / 6)
-    assert set(metadata["candidates"]) == set(COMPLEXITY_ORDER)
+    assert set(metadata["candidates"]) == set(CANDIDATE_NAMES)
     assert set(metadata["test_metrics"]) == {"roc_auc", "gini", "ks", "pr_auc", "brier"}
     assert metadata["rows"]["train"] == N_ROWS["train"] - 1
     assert set(metadata["data_sha256"]) == {"train", "valid", "test"}
