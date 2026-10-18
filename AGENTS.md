@@ -8,8 +8,8 @@ Give Me Some Credit, servido por una API de inferencia. Contexto completo de neg
 
 1. Lee [docs/constitution.md](docs/constitution.md).
 2. Lee la spec activa y su plan:
-   - Spec activa: `docs/superpowers/specs/2026-10-17-modelado-decision-design.md`
-   - Plan activo: `docs/superpowers/plans/2026-10-17-modelado-decision.md`
+   - Spec activa: `docs/superpowers/specs/2026-10-18-api-design.md`
+   - Plan activo: `docs/superpowers/plans/2026-10-18-api.md`
 3. Si la tarea no está cubierta por una spec aprobada, no escribas código: propón primero una spec.
 
 ## Mapa de documentos

@@ -5,6 +5,7 @@ description = "Probabilidad de mora severa (90+ días en 2 años) sobre Give Me 
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
 dependencies = [
+    "fastapi>=0.143.3",
     "lightgbm>=4.7.0",
     "matplotlib>=3.11.2",
     "mlflow>=3.17.1",
@@ -13,6 +14,7 @@ dependencies = [
     "pyyaml>=6.0.3",
     "scikit-learn>=1.9.1",
     "shap>=0.51.0",
+    "uvicorn>=0.54.0",
 ]
 
 [build-system]
@@ -42,10 +44,12 @@ lint = ["_ruff-check", "_ruff-format-check"]
 format = ["_ruff-format", "_ruff-fix"]
 test = "pytest"
 train = "python -m credit_risk.models.train"
+serve = "uvicorn credit_risk.api.main:app --host 127.0.0.1 --port 8000"
 check = ["lint", "test"]
 
 [dependency-groups]
 dev = [
+    "httpx>=0.28.1",
     "ipykernel>=7.4.0",
     "nbconvert>=7.17.2",
     "poethepoet>=0.48.0",
