@@ -9,11 +9,13 @@ import yaml
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_PARAMS_PATH = PROJECT_ROOT / "configs" / "params.yaml"
 
-TOP_LEVEL_KEYS = ("seed", "target", "paths", "data", "costs", "split")
+TOP_LEVEL_KEYS = ("seed", "target", "paths", "data", "costs", "split", "decision", "search")
 PATH_KEYS = ("raw", "interim", "processed", "external", "models", "reports")
 DATA_KEYS = ("training_file",)
 COST_KEYS = ("false_negative", "false_positive")
 SPLIT_KEYS = ("test_size", "valid_size")
+DECISION_KEYS = ("review_capacity", "cost_sensitivity_ratios", "review_capacity_sensitivity")
+SEARCH_KEYS = ("n_iter", "cv_folds")
 
 
 class ConfigError(ValueError):
@@ -43,6 +45,19 @@ class Split:
 
 
 @dataclass(frozen=True)
+class Decision:
+    review_capacity: float
+    cost_sensitivity_ratios: tuple[float, ...]
+    review_capacity_sensitivity: tuple[float, ...]
+
+
+@dataclass(frozen=True)
+class Search:
+    n_iter: int
+    cv_folds: int
+
+
+@dataclass(frozen=True)
 class Config:
     seed: int
     target: str
@@ -50,6 +65,8 @@ class Config:
     paths: Paths
     costs: Costs
     split: Split
+    decision: Decision
+    search: Search
 
 
 def _require(section: Any, keys: tuple[str, ...], where: str) -> dict[str, Any]:
@@ -66,18 +83,18 @@ def _resolve(value: str) -> Path:
     return path if path.is_absolute() else PROJECT_ROOT / path
 
 
-def _positive_float(value: Any, name: str) -> float:
+def _positive_float(value: Any, name: str, section: str = "costs") -> float:
     try:
         number = float(value)
     except (TypeError, ValueError) as exc:
-        raise ConfigError(f"costs.{name} must be a number, got {value!r}") from exc
+        raise ConfigError(f"{section}.{name} must be a number, got {value!r}") from exc
     if number <= 0:
-        raise ConfigError(f"costs.{name} must be positive, got {number}")
+        raise ConfigError(f"{section}.{name} must be positive, got {number}")
     return number
 
 
-def _fraction(value: Any, name: str) -> float:
-    message = f"split.{name} must be a number between 0 and 1 (exclusive), got {value!r}"
+def _fraction(value: Any, name: str, section: str = "split") -> float:
+    message = f"{section}.{name} must be a number between 0 and 1 (exclusive), got {value!r}"
     try:
         number = float(value)
     except (TypeError, ValueError) as exc:
@@ -85,6 +102,19 @@ def _fraction(value: Any, name: str) -> float:
     if not 0 < number < 1:
         raise ConfigError(message)
     return number
+
+
+def _integer(value: Any, name: str, minimum: int) -> int:
+    message = f"search.{name} must be an integer >= {minimum}, got {value!r}"
+    if isinstance(value, bool) or not isinstance(value, int) or value < minimum:
+        raise ConfigError(message)
+    return value
+
+
+def _sequence(value: Any, name: str) -> list[Any]:
+    if not isinstance(value, list) or not value:
+        raise ConfigError(f"decision.{name} must be a non-empty list, got {value!r}")
+    return value
 
 
 def load_config(path: Path | str = DEFAULT_PARAMS_PATH) -> Config:
@@ -99,9 +129,34 @@ def load_config(path: Path | str = DEFAULT_PARAMS_PATH) -> Config:
     cost_section = _require(raw["costs"], COST_KEYS, f"{path.name} [costs]")
     split_section = _require(raw["split"], SPLIT_KEYS, f"{path.name} [split]")
 
+    decision_section = _require(raw["decision"], DECISION_KEYS, f"{path.name} [decision]")
+    search_section = _require(raw["search"], SEARCH_KEYS, f"{path.name} [search]")
+
     paths = Paths(**{key: _resolve(path_section[key]) for key in PATH_KEYS})
     costs = Costs(**{key: _positive_float(cost_section[key], key) for key in COST_KEYS})
     split = Split(**{key: _fraction(split_section[key], key) for key in SPLIT_KEYS})
+
+    decision = Decision(
+        review_capacity=_fraction(
+            decision_section["review_capacity"], "review_capacity", "decision"
+        ),
+        cost_sensitivity_ratios=tuple(
+            _positive_float(v, "cost_sensitivity_ratios", "decision")
+            for v in _sequence(
+                decision_section["cost_sensitivity_ratios"], "cost_sensitivity_ratios"
+            )
+        ),
+        review_capacity_sensitivity=tuple(
+            _fraction(v, "review_capacity_sensitivity", "decision")
+            for v in _sequence(
+                decision_section["review_capacity_sensitivity"], "review_capacity_sensitivity"
+            )
+        ),
+    )
+    search = Search(
+        n_iter=_integer(search_section["n_iter"], "n_iter", 1),
+        cv_folds=_integer(search_section["cv_folds"], "cv_folds", 2),
+    )
 
     return Config(
         seed=int(raw["seed"]),
@@ -110,4 +165,6 @@ def load_config(path: Path | str = DEFAULT_PARAMS_PATH) -> Config:
         paths=paths,
         costs=costs,
         split=split,
+        decision=decision,
+        search=search,
     )

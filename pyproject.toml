@@ -5,11 +5,14 @@ description = "Probabilidad de mora severa (90+ días en 2 años) sobre Give Me 
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
 dependencies = [
+    "lightgbm>=4.7.0",
     "matplotlib>=3.11.2",
+    "mlflow>=3.17.1",
     "numpy>=2.4.6",
     "pandas>=3.0.6",
     "pyyaml>=6.0.3",
     "scikit-learn>=1.9.1",
+    "shap>=0.51.0",
 ]
 
 [build-system]
@@ -38,6 +41,7 @@ _ruff-fix = "ruff check --fix ."
 lint = ["_ruff-check", "_ruff-format-check"]
 format = ["_ruff-format", "_ruff-fix"]
 test = "pytest"
+train = "python -m credit_risk.models.train"
 check = ["lint", "test"]
 
 [dependency-groups]

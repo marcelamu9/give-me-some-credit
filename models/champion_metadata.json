@@ -1,0 +1,260 @@
+{
+  "champion": "lightgbm",
+  "selection_rule": "menor costo esperado por cliente en validación; son elegibles los modelos a menos de 2 % de ese costo cuyo Brier no sea más de 10 % peor que el del modelo de menor costo; entre ellos gana la regresión logística (interpretable) y, si no es elegible, el de menor latencia de predicción (más barato de operar).",
+  "features": [
+    "RevolvingUtilizationOfUnsecuredLines",
+    "age",
+    "NumberOfTime30-59DaysPastDueNotWorse",
+    "DebtRatio",
+    "MonthlyIncome",
+    "NumberOfOpenCreditLinesAndLoans",
+    "NumberOfTimes90DaysLate",
+    "NumberRealEstateLoansOrLines",
+    "NumberOfTime60-89DaysPastDueNotWorse",
+    "NumberOfDependents"
+  ],
+  "model_features": [
+    "RevolvingUtilizationOfUnsecuredLines",
+    "age",
+    "NumberOfTime30-59DaysPastDueNotWorse",
+    "DebtRatio",
+    "MonthlyIncome",
+    "NumberOfOpenCreditLinesAndLoans",
+    "NumberOfTimes90DaysLate",
+    "NumberRealEstateLoansOrLines",
+    "NumberOfTime60-89DaysPastDueNotWorse",
+    "NumberOfDependents",
+    "has_special_past_due_code",
+    "income_unavailable"
+  ],
+  "thresholds": {
+    "t_star": 0.14,
+    "t_low": 0.07251224230445355,
+    "bayes_threshold": 0.16666666666666666
+  },
+  "costs": {
+    "false_negative": 5.0,
+    "false_positive": 1.0
+  },
+  "review_capacity": 0.1,
+  "candidates": {
+    "logistic": {
+      "best_params": {
+        "model__C": 0.008260808399079604,
+        "model__l1_ratio": 1.0
+      },
+      "cv_auc_mean": 0.8533848299885696,
+      "cv_auc_std": 0.0038899876391020223,
+      "search_seconds": 35.094850600002246,
+      "calibration_seconds": 1.6857591000007233,
+      "latency_ms": 49.456143000006705,
+      "valid_metrics": {
+        "roc_auc": 0.8556647376082263,
+        "gini": 0.7113294752164525,
+        "ks": 0.5469405247404168,
+        "pr_auc": 0.3873024306342379,
+        "brier": 0.04980386623150736
+      },
+      "valid_metrics_uncalibrated": {
+        "roc_auc": 0.8557028969932982,
+        "gini": 0.7114057939865963,
+        "ks": 0.5489667670825633,
+        "pr_auc": 0.39095942505685066,
+        "brier": 0.050093833670252705
+      },
+      "valid_expected_cost": 0.2219386687863448,
+      "valid_t_star": 0.18
+    },
+    "random_forest": {
+      "best_params": {
+        "model__max_depth": 11,
+        "model__max_features": "sqrt",
+        "model__min_samples_leaf": 40,
+        "model__n_estimators": 202
+      },
+      "cv_auc_mean": 0.8650429968832694,
+      "cv_auc_std": 0.004095486254207221,
+      "search_seconds": 202.59465699999782,
+      "calibration_seconds": 15.996037400000205,
+      "latency_ms": 447.74474399999235,
+      "valid_metrics": {
+        "roc_auc": 0.8659635425375058,
+        "gini": 0.7319270850750117,
+        "ks": 0.571542195373699,
+        "pr_auc": 0.40520290717515056,
+        "brier": 0.049187081982838186
+      },
+      "valid_metrics_uncalibrated": {
+        "roc_auc": 0.8663548687818478,
+        "gini": 0.7327097375636955,
+        "ks": 0.5718407488011232,
+        "pr_auc": 0.40486577656813705,
+        "brier": 0.04929818721374305
+      },
+      "valid_expected_cost": 0.21599799188386395,
+      "valid_t_star": 0.175
+    },
+    "lightgbm": {
+      "best_params": {
+        "model__colsample_bytree": 0.9160702162124823,
+        "model__learning_rate": 0.040360819412796234,
+        "model__min_child_samples": 60,
+        "model__n_estimators": 227,
+        "model__num_leaves": 21,
+        "model__reg_lambda": 4.250192888948996,
+        "model__subsample": 0.7797802696552814
+      },
+      "cv_auc_mean": 0.8653424412220094,
+      "cv_auc_std": 0.003736366333297984,
+      "search_seconds": 239.8857076000022,
+      "calibration_seconds": 5.23560709999947,
+      "latency_ms": 93.89879700000165,
+      "valid_metrics": {
+        "roc_auc": 0.868105215269064,
+        "gini": 0.7362104305381281,
+        "ks": 0.5790362224847028,
+        "pr_auc": 0.4093312528906018,
+        "brier": 0.04903681179731251
+      },
+      "valid_metrics_uncalibrated": {
+        "roc_auc": 0.8673056046096201,
+        "gini": 0.7346112092192403,
+        "ks": 0.5824502621472736,
+        "pr_auc": 0.40862247003709107,
+        "brier": 0.04908758879861659
+      },
+      "valid_expected_cost": 0.2141153830063172,
+      "valid_t_star": 0.14
+    }
+  },
+  "valid_bands": {
+    "approve": {
+      "rows": 18419,
+      "share": 0.7705727314563026,
+      "default_rate": 0.02084803735273359
+    },
+    "review": {
+      "rows": 2395,
+      "share": 0.10019662803832155,
+      "default_rate": 0.09227557411273486
+    },
+    "reject": {
+      "rows": 3089,
+      "share": 0.1292306405053759,
+      "default_rate": 0.32243444480414374
+    }
+  },
+  "cost_sensitivity": [
+    {
+      "fn_fp_ratio": 3.0,
+      "t_star": 0.28,
+      "t_low": 0.10505098928505736,
+      "approval_rate": 0.9338995105216918,
+      "default_rate_approved": 0.04098911436634861,
+      "expected_cost": 0.15224030456428064
+    },
+    {
+      "fn_fp_ratio": 5.0,
+      "t_star": 0.14,
+      "t_low": 0.07251224230445355,
+      "approval_rate": 0.8707693594946241,
+      "default_rate_approved": 0.029066974152013068,
+      "expected_cost": 0.2141153830063172
+    },
+    {
+      "fn_fp_ratio": 10.0,
+      "t_star": 0.1,
+      "t_low": 0.05901129098329455,
+      "approval_rate": 0.8254194034221646,
+      "default_rate_approved": 0.025038013177901674,
+      "expected_cost": 0.33493703719198425
+    },
+    {
+      "fn_fp_ratio": 20.0,
+      "t_star": 0.045,
+      "t_low": 0.027287747902161662,
+      "approval_rate": 0.6710036397104966,
+      "default_rate_approved": 0.014464742190909657,
+      "expected_cost": 0.46584110781073507
+    }
+  ],
+  "capacity_sensitivity": [
+    {
+      "capacity": 0.05,
+      "t_low": 0.09727113393136572,
+      "approve_rows": 19619,
+      "approve_default_rate": 0.024822875783679088,
+      "review_rows": 1195,
+      "review_default_rate": 0.09874476987447699,
+      "reject_rows": 3089,
+      "reject_default_rate": 0.32243444480414374
+    },
+    {
+      "capacity": 0.1,
+      "t_low": 0.07251224230445355,
+      "approve_rows": 18419,
+      "approve_default_rate": 0.02084803735273359,
+      "review_rows": 2395,
+      "review_default_rate": 0.09227557411273486,
+      "reject_rows": 3089,
+      "reject_default_rate": 0.32243444480414374
+    },
+    {
+      "capacity": 0.2,
+      "t_low": 0.044992439593448896,
+      "approve_rows": 16031,
+      "approve_default_rate": 0.014409581435967812,
+      "review_rows": 4783,
+      "review_default_rate": 0.07819360234162659,
+      "reject_rows": 3089,
+      "reject_default_rate": 0.32243444480414374
+    }
+  ],
+  "test_metrics": {
+    "roc_auc": 0.8650337179411325,
+    "gini": 0.730067435882265,
+    "ks": 0.5891405649270556,
+    "pr_auc": 0.4009734289142995,
+    "brier": 0.04881405541928634
+  },
+  "test_expected_cost": 0.2156029318250276,
+  "test_bands": {
+    "approve": {
+      "rows": 22861,
+      "share": 0.7651193145687607,
+      "default_rate": 0.01907178163684878
+    },
+    "review": {
+      "rows": 3020,
+      "share": 0.1010743331436795,
+      "default_rate": 0.10099337748344371
+    },
+    "reject": {
+      "rows": 3998,
+      "share": 0.13380635228755983,
+      "default_rate": 0.31540770385192596
+    }
+  },
+  "rows": {
+    "train": 95608,
+    "valid": 23903,
+    "test": 29879
+  },
+  "data_sha256": {
+    "train": "522ae082cb61bbe8e3c712ae79c1de5ead2a25b67564c90fb981e9d718676402",
+    "valid": "c868603813c545f81f2e8bd7db6dcca18fd25c0a6dc64e68cd85f13a941fa9ba",
+    "test": "80b12d24e7698a81bc266e261bb19cb5d1b2de2eaccacecf686bac36cbb3dfdb"
+  },
+  "seed": 42,
+  "latency_rows": 200,
+  "library_versions": {
+    "scikit-learn": "1.9.1",
+    "lightgbm": "4.7.0",
+    "pandas": "3.0.6",
+    "numpy": "2.4.6",
+    "mlflow": "3.17.1",
+    "shap": "0.51.0"
+  },
+  "trained_at": "2026-10-18T02:59:33+00:00",
+  "training_seconds": 868.8067649000004
+}
