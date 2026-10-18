@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import Body, FastAPI, HTTPException, Request, Response
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 
 from credit_risk.api.examples import OPENAPI_EXAMPLES
 from credit_risk.api.schemas import (
@@ -36,6 +38,14 @@ def create_app(model_dir: Path | None = None) -> FastAPI:
         ),
         lifespan=lifespan,
     )
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
+        # The default 422 body echoes ``input``, which cannot be serialised for NaN/Infinity.
+        detail = [
+            {k: v for k, v in error.items() if k not in {"input", "ctx"}} for error in exc.errors()
+        ]
+        return JSONResponse(status_code=422, content={"detail": detail})
 
     def get_model(request: Request) -> LoadedModel:
         loaded = getattr(request.app.state, "model", None)

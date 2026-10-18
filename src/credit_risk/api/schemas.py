@@ -14,7 +14,7 @@ _COUNT_MAX = 98
 class ClientFeatures(BaseModel):
     """One client, with the original Kaggle names as JSON keys (aliases)."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
     revolving_utilization: float = Field(alias="RevolvingUtilizationOfUnsecuredLines", ge=0)
     age: int = Field(alias="age", ge=18, le=120)

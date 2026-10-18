@@ -122,3 +122,12 @@ def test_openapi_has_demo_examples(client):
     schema = client.get("/openapi.json").json()
     content = schema["paths"]["/predict"]["post"]["requestBody"]["content"]["application/json"]
     assert set(content["examples"]) == {"low_risk", "same_client_with_delays", "invalid_age"}
+
+
+@pytest.mark.parametrize("bad", ["NaN", "Infinity", "-Infinity", "1e400"])
+def test_non_finite_numbers_return_422(client, bad):
+    import json
+
+    body = json.dumps(LOW_RISK).replace('"DebtRatio": 0.25', f'"DebtRatio": {bad}')
+    response = client.post("/predict", content=body, headers={"Content-Type": "application/json"})
+    assert response.status_code == 422

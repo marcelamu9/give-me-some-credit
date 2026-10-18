@@ -135,3 +135,53 @@ def test_predict_single_row_with_special_codes_and_nulls(loaded):
         }
     )
     assert 0 <= predict(loaded, client)["probability"] <= 1
+
+
+def test_load_model_corrupt_artifact_returns_none(lightgbm_dir, tmp_path):
+    (tmp_path / "champion.joblib").write_bytes(b"not a joblib file")
+    (tmp_path / "champion_metadata.json").write_text("{}", encoding="utf-8")
+    assert load_model(tmp_path) is None
+
+
+def test_load_model_incomplete_metadata_returns_none(lightgbm_dir, tmp_path):
+    (tmp_path / "champion.joblib").write_bytes((lightgbm_dir / "champion.joblib").read_bytes())
+    (tmp_path / "champion_metadata.json").write_text("{}", encoding="utf-8")
+    assert load_model(tmp_path) is None
+
+
+def test_top_reasons_skips_excluded_variables():
+    contributions = pd.Series(
+        {"income_unavailable": 0.5, "age": 0.3, "DebtRatio": 0.2, "NumberOfDependents": 0.1}
+    )
+    reasons = top_reasons(contributions, exclude={"income_unavailable"})
+    assert [r["feature"] for r in reasons] == ["age", "DebtRatio", "NumberOfDependents"]
+
+
+def test_predict_does_not_claim_missing_income_when_given(loaded, monkeypatch):
+    from credit_risk.api import service
+
+    flagged = pd.Series(0.0, index=MODEL_FEATURES)
+    flagged["income_unavailable"] = 0.9
+    flagged["has_special_past_due_code"] = 0.8
+    monkeypatch.setattr(service, "feature_contributions", lambda model, row: flagged)
+    result = predict(loaded, row())  # income given, no 96/98 codes
+    descriptions = [r["description"] for r in result["top_reasons"]]
+    assert REASONS["income_unavailable"][1] not in descriptions
+    assert REASONS["has_special_past_due_code"][1] not in descriptions
+
+
+def test_predict_reports_missing_income_and_special_codes(loaded, monkeypatch):
+    from credit_risk.api import service
+
+    flagged = pd.Series(0.0, index=MODEL_FEATURES)
+    flagged["income_unavailable"] = 0.9
+    flagged["has_special_past_due_code"] = 0.8
+    monkeypatch.setattr(service, "feature_contributions", lambda model, row: flagged)
+    client = row(**{"MonthlyIncome": None, "NumberOfTimes90DaysLate": 98})
+    descriptions = [r["description"] for r in predict(loaded, client)["top_reasons"]]
+    assert REASONS["income_unavailable"][1] in descriptions
+    assert REASONS["has_special_past_due_code"][1] in descriptions
+
+
+def test_reason_labels_do_not_claim_high_risk():
+    assert "alto" not in REASONS["RevolvingUtilizationOfUnsecuredLines"][1].lower()

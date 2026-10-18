@@ -90,6 +90,7 @@ Desde la metadata: `model_version`, `champion`, `thresholds` (`t_low`, `t_star`,
 | `income_unavailable` | `MonthlyIncome` | Ingreso no informado |
 | `has_special_past_due_code` | `NumberOfTimes90DaysLate` | Historial de atrasos con código especial (96/98) |
 
+  Refinamientos tras la revisión final: (1) `income_unavailable` y `has_special_past_due_code` solo se muestran si su indicador vale 1 para ese cliente, y si falta el ingreso se muestra "Ingreso no informado" en lugar de `MonthlyIncome`; (2) las descripciones no afirman riesgo alto (p. ej. "Uso de tarjetas y líneas de crédito"), porque las razones de relleno pueden bajar el riesgo; (3) los valores SHAP se calculan antes de la calibración isotónica, así que indican dirección y orden, no suman la probabilidad devuelta.
   Si dos razones apuntan al mismo `feature` devuelto, se conserva la de mayor contribución y se toma la siguiente.
 
 ## 5. Carga del modelo y configuración
