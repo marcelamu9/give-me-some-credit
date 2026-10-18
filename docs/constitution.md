@@ -16,7 +16,9 @@ y se corrige la spec.
    test verde, mejora) se afirma sin la salida del comando que lo demuestra.
 6. **Spec antes que código.** Cada sub-proyecto tiene spec aprobada y plan antes de escribir
    código. Un commit por tarea.
-7. **Negocio en configuración.** Costos, umbrales y bandas viven en `configs/params.yaml`,
-   nunca hardcodeados.
+7. **Negocio en configuración.** Las entradas de negocio (costos, capacidad de revisión,
+   escenarios de sensibilidad) viven en `configs/params.yaml`; los umbrales que se aprenden del
+   modelo viven en su metadata versionada (`models/champion_metadata.json`). Nada de esto se
+   hardcodea.
 8. **Datos crudos inmutables.** `data/raw/` no se modifica ni se versiona; las transformaciones
    escriben en `data/interim/` o `data/processed/`.

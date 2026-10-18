@@ -22,6 +22,13 @@ costs:
 split:
   test_size: 0.2
   valid_size: 0.2
+decision:
+  review_capacity: 0.10
+  cost_sensitivity_ratios: [3, 5, 10, 20]
+  review_capacity_sensitivity: [0.05, 0.10, 0.20]
+search:
+  n_iter: 20
+  cv_folds: 5
 """
 
 
@@ -121,4 +128,33 @@ def test_split_sizes_must_be_fractions(tmp_path, test_size, valid_size):
         "valid_size: 0.2", f"valid_size: {valid_size}"
     )
     with pytest.raises(ConfigError, match="between 0 and 1"):
+        load_config(write_params(tmp_path, text))
+
+
+def test_default_decision_and_search_params():
+    cfg = load_config()
+    assert cfg.decision.review_capacity == 0.10
+    assert cfg.decision.cost_sensitivity_ratios == (3.0, 5.0, 10.0, 20.0)
+    assert cfg.decision.review_capacity_sensitivity == (0.05, 0.10, 0.20)
+    assert cfg.search.n_iter == 20
+    assert cfg.search.cv_folds == 5
+
+
+@pytest.mark.parametrize("capacity", ["0", "1", '"x"'])
+def test_review_capacity_must_be_fraction(tmp_path, capacity):
+    text = VALID_YAML.replace("review_capacity: 0.10", f"review_capacity: {capacity}")
+    with pytest.raises(ConfigError, match="between 0 and 1"):
+        load_config(write_params(tmp_path, text))
+
+
+@pytest.mark.parametrize(("key", "value"), [("n_iter", 0), ("cv_folds", 1)])
+def test_search_values_must_be_positive_integers(tmp_path, key, value):
+    text = VALID_YAML.replace(f"{key}: {20 if key == 'n_iter' else 5}", f"{key}: {value}")
+    with pytest.raises(ConfigError, match="must be"):
+        load_config(write_params(tmp_path, text))
+
+
+def test_missing_decision_key_is_named(tmp_path):
+    text = VALID_YAML.replace("  review_capacity: 0.10\n", "")
+    with pytest.raises(ConfigError, match="review_capacity"):
         load_config(write_params(tmp_path, text))
