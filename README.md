@@ -58,6 +58,12 @@ Abre `http://127.0.0.1:8000/docs`. Guion de la demo:
 | `POST /predict` | Probabilidad, decisión (`approve`/`review`/`reject`), nivel de riesgo y 3 razones |
 | `GET /model-info` | Versión, umbrales, costos, métricas de test y variables |
 
+**Cómo leer la respuesta:**
+- `MonthlyIncome` y `NumberOfDependents` son opcionales: si no se envían (o llegan como `null`), el pipeline los imputa igual que en el entrenamiento.
+- Los campos numéricos deben ir como números JSON: `"30"` (texto) o `true` se rechazan con 422.
+- Las **razones** son las variables que más suben el riesgo de ese cliente según SHAP, promediado sobre las 5 copias calibradas del modelo. Indican **dirección y orden**, no cuántos puntos de probabilidad aporta cada una (SHAP se calcula antes de la calibración isotónica).
+- Latencia medida en local: unos 100 ms por predicción, con los explicadores SHAP creados una sola vez al cargar el modelo.
+
 ## Estado
 
 | # | Sub-proyecto | Estado |

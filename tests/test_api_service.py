@@ -13,6 +13,7 @@ from credit_risk.api.service import (
     feature_contributions,
     load_model,
     predict,
+    special_code_feature,
     top_reasons,
 )
 from credit_risk.decision.policy import RISK_LEVEL, assign_band
@@ -163,7 +164,7 @@ def test_predict_does_not_claim_missing_income_when_given(loaded, monkeypatch):
     flagged = pd.Series(0.0, index=MODEL_FEATURES)
     flagged["income_unavailable"] = 0.9
     flagged["has_special_past_due_code"] = 0.8
-    monkeypatch.setattr(service, "feature_contributions", lambda model, row: flagged)
+    monkeypatch.setattr(service, "feature_contributions", lambda model, row, explainers=(): flagged)
     result = predict(loaded, row())  # income given, no 96/98 codes
     descriptions = [r["description"] for r in result["top_reasons"]]
     assert REASONS["income_unavailable"][1] not in descriptions
@@ -176,7 +177,7 @@ def test_predict_reports_missing_income_and_special_codes(loaded, monkeypatch):
     flagged = pd.Series(0.0, index=MODEL_FEATURES)
     flagged["income_unavailable"] = 0.9
     flagged["has_special_past_due_code"] = 0.8
-    monkeypatch.setattr(service, "feature_contributions", lambda model, row: flagged)
+    monkeypatch.setattr(service, "feature_contributions", lambda model, row, explainers=(): flagged)
     client = row(**{"MonthlyIncome": None, "NumberOfTimes90DaysLate": 98})
     descriptions = [r["description"] for r in predict(loaded, client)["top_reasons"]]
     assert REASONS["income_unavailable"][1] in descriptions
@@ -185,3 +186,42 @@ def test_predict_reports_missing_income_and_special_codes(loaded, monkeypatch):
 
 def test_reason_labels_do_not_claim_high_risk():
     assert "alto" not in REASONS["RevolvingUtilizationOfUnsecuredLines"][1].lower()
+
+
+@pytest.mark.parametrize(
+    ("coded", "expected"),
+    [
+        (["NumberOfTime30-59DaysPastDueNotWorse"], "NumberOfTime30-59DaysPastDueNotWorse"),
+        (["NumberOfTime60-89DaysPastDueNotWorse"], "NumberOfTime60-89DaysPastDueNotWorse"),
+        (
+            ["NumberOfTime30-59DaysPastDueNotWorse", "NumberOfTimes90DaysLate"],
+            "NumberOfTimes90DaysLate",
+        ),
+    ],
+)
+def test_special_code_reason_points_to_the_coded_column(coded, expected):
+    frame = row(**{column: 98 for column in coded})
+    assert special_code_feature(frame) == expected
+
+
+def test_special_code_feature_none_without_codes():
+    assert special_code_feature(row()) is None
+
+
+def test_top_reasons_feature_override():
+    contributions = pd.Series(0.0, index=MODEL_FEATURES)
+    contributions["has_special_past_due_code"] = 1.0
+    target = "NumberOfTime30-59DaysPastDueNotWorse"
+    reasons = top_reasons(contributions, overrides={"has_special_past_due_code": target})
+    assert reasons[0]["feature"] == target
+    assert "96/98" in reasons[0]["description"]
+
+
+def test_loaded_model_caches_one_explainer_per_copy(loaded):
+    assert len(loaded.explainers) == len(loaded.model.calibrated_classifiers_) == 5
+
+
+def test_cached_explainers_give_the_same_contributions(loaded):
+    frame = row()
+    cached = feature_contributions(loaded.model, frame, explainers=loaded.explainers)
+    pd.testing.assert_series_equal(cached, feature_contributions(loaded.model, frame))

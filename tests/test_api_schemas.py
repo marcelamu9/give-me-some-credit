@@ -67,3 +67,25 @@ def test_special_codes_accepted():
         "NumberOfTime60-89DaysPastDueNotWorse": 96,
     }
     assert ClientFeatures.model_validate(payload)
+
+
+@pytest.mark.parametrize("key", ["MonthlyIncome", "NumberOfDependents"])
+def test_optional_fields_can_be_omitted(key):
+    frame = ClientFeatures.model_validate(_without(key)).to_frame()
+    assert math.isnan(frame[key].iloc[0])
+
+
+@pytest.mark.parametrize(
+    ("key", "value"),
+    [("age", "30"), ("DebtRatio", "0.3"), ("NumberOfTimes90DaysLate", "1"), ("age", True)],
+)
+def test_strings_and_booleans_are_rejected_in_numeric_fields(key, value):
+    with pytest.raises(ValidationError):
+        ClientFeatures.model_validate({**VALID, key: value})
+
+
+def test_integers_are_accepted_in_float_fields():
+    frame = ClientFeatures.model_validate(
+        {**VALID, "DebtRatio": 1, "MonthlyIncome": 5000}
+    ).to_frame()
+    assert frame["DebtRatio"].iloc[0] == 1.0

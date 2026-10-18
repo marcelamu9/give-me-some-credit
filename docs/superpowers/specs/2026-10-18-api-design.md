@@ -134,6 +134,16 @@ Los valores concretos los fija quien implemente y **se verifican contra el model
 
 Nombres originales de Kaggle con alias; `MonthlyIncome` y `NumberOfDependents` opcionales; ejemplos precargados; razones como objetos `{feature, description}` en español; SHAP promediado sobre las 5 copias; `model_version` en cada respuesta; 503 si falta el modelo; probabilidad con 4 decimales; conteos 0–98 aceptando 96/98; tests con modelo sintético.
 
+## 9.1 Enmienda (2026-10-18, tras la revisión final)
+
+Aprobada por la usuaria tras la revisión de los pendientes de la ejecución:
+
+1. `MonthlyIncome` y `NumberOfDependents` se pueden **omitir** (valor por defecto `null`), además de enviarse como `null`.
+2. **Modo estricto** en `ClientFeatures`: números enviados como texto (`"30"`) o booleanos → 422. Los enteros se siguen aceptando en campos decimales.
+3. La razón del código especial 96/98 muestra como `feature` la **columna de atraso que trae el código** (la más severa si hay varias), no siempre `NumberOfTimes90DaysLate`. Corrige un supuesto de esta spec: en los datos el código llega en las tres columnas a la vez, pero la API acepta cada una por separado.
+4. Los explicadores SHAP se crean **una vez al cargar el modelo** (`LoadedModel.explainers`): la latencia de `/predict` bajó de ≈ 950 ms a ≈ 103 ms en local.
+5. Documentado en el `README.md`: las razones indican dirección y orden, no puntos de probabilidad (SHAP se calcula en log-odds de cada copia, antes de la calibración isotónica).
+
 ## 10. Criterios de aceptación
 
 - [x] `uv run poe check` pasa, incluidos los tests de la API sin el modelo real.

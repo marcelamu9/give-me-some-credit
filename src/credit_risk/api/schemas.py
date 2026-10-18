@@ -14,18 +14,19 @@ _COUNT_MAX = 98
 class ClientFeatures(BaseModel):
     """One client, with the original Kaggle names as JSON keys (aliases)."""
 
-    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    # strict: numbers sent as text ("30") or booleans are rejected instead of coerced.
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False, strict=True)
 
     revolving_utilization: float = Field(alias="RevolvingUtilizationOfUnsecuredLines", ge=0)
     age: int = Field(alias="age", ge=18, le=120)
     past_due_30_59: int = Field(alias="NumberOfTime30-59DaysPastDueNotWorse", ge=0, le=_COUNT_MAX)
     debt_ratio: float = Field(alias="DebtRatio", ge=0)
-    monthly_income: float | None = Field(alias="MonthlyIncome", ge=0)
+    monthly_income: float | None = Field(default=None, alias="MonthlyIncome", ge=0)
     open_credit_lines: int = Field(alias="NumberOfOpenCreditLinesAndLoans", ge=0, le=_COUNT_MAX)
     times_90_days_late: int = Field(alias="NumberOfTimes90DaysLate", ge=0, le=_COUNT_MAX)
     real_estate_loans: int = Field(alias="NumberRealEstateLoansOrLines", ge=0, le=_COUNT_MAX)
     past_due_60_89: int = Field(alias="NumberOfTime60-89DaysPastDueNotWorse", ge=0, le=_COUNT_MAX)
-    dependents: int | None = Field(alias="NumberOfDependents", ge=0, le=20)
+    dependents: int | None = Field(default=None, alias="NumberOfDependents", ge=0, le=20)
 
     def to_frame(self) -> pd.DataFrame:
         """One-row frame with the model's columns in training order (None -> NaN)."""
