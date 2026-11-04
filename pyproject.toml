@@ -45,6 +45,8 @@ format = ["_ruff-format", "_ruff-fix"]
 test = "pytest"
 train = "python -m credit_risk.models.train"
 serve = "uvicorn credit_risk.api.main:app --host 127.0.0.1 --port 8000"
+docker-build = "python -m credit_risk.deploy.docker_build"
+docker-run = "docker run --rm --name credit-risk -p 8000:8000 credit-risk-api:latest"
 check = ["lint", "test"]
 
 [dependency-groups]
