@@ -13,12 +13,18 @@ IMAGE_NAME = "credit-risk-api"
 
 
 def git_sha() -> str:
-    """Short SHA of HEAD; ``-dirty`` if there are uncommitted changes (image not reproducible)."""
+    """Short SHA of HEAD; ``-dirty`` if tracked files have uncommitted changes.
+
+    Untracked files are ignored: local notes that never reach git would mark every build dirty.
+    """
     sha = subprocess.run(
         ["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, check=True
     ).stdout.strip()
     status = subprocess.run(
-        ["git", "status", "--porcelain"], capture_output=True, text=True, check=True
+        ["git", "status", "--porcelain", "--untracked-files=no"],
+        capture_output=True,
+        text=True,
+        check=True,
     ).stdout.strip()
     return f"{sha}-dirty" if status else sha
 
