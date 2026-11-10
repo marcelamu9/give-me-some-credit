@@ -110,15 +110,23 @@ Scripts en `deploy/aws/`, ejecutados por la usuaria (o por Claude **solo con su 
 
 ## 8. Criterios de aceptación
 
-- [ ] `uv run poe check` pasa (incluye tests del smoke test con una API falsa).
-- [ ] `docker build` produce una imagen sin `data/` ni `candidates.joblib` (verificado listando su contenido) y corre como usuario no root.
-- [ ] El smoke test pasa contra el contenedor local.
-- [ ] El smoke test pasa contra la URL pública de AWS.
-- [ ] Tras `99_teardown.sh`, no queda ningún recurso con la etiqueta `Project=credit-risk` ni servicio de Express Mode, repositorio ECR o bucket del proyecto.
-- [ ] La alerta de presupuesto existe antes de crear el resto de recursos.
-- [ ] El workflow `deploy.yml` despliega con OIDC, sin secretos de AWS en GitHub.
-- [ ] README y ADR-003 documentan arquitectura, costos, pasos y limpieza; `AGENTS.md` apunta a esta spec y a su plan.
+- [x] `uv run poe check` pasa (incluye tests del smoke test con una API falsa).
+- [x] `docker build` produce una imagen sin `data/` ni `candidates.joblib` (verificado listando su contenido) y corre como usuario no root.
+- [x] El smoke test pasa contra el contenedor local.
+- [x] El smoke test pasa contra la URL pública de AWS.
+- [x] Tras `99_teardown.sh`, no queda ningún recurso con la etiqueta `Project=credit-risk` ni servicio de Express Mode, repositorio ECR o bucket del proyecto (ver enmienda 10.1).
+- [x] La alerta de presupuesto existe antes de crear el resto de recursos.
+- [x] El workflow `deploy.yml` despliega con OIDC, sin secretos de AWS en GitHub.
+- [x] README y ADR-003 documentan arquitectura, costos, pasos y limpieza; `AGENTS.md` apunta a esta spec y a su plan.
 
 ## 9. Lo que queda al criterio de quien implemente
 
 Detalles del `Dockerfile` (multi-stage o no) siempre que cumpla §4; nombres exactos de recursos dentro del prefijo; redacción de los comentarios de los scripts; formato del informe del smoke test. Los comandos de AWS se verifican contra la documentación oficial vigente, no de memoria.
+
+## 10. Enmiendas
+
+1. **Verificación del teardown:** el índice de etiquetas de AWS lista durante horas recursos ya borrados, así que el criterio se comprueba preguntando a cada servicio; el índice se muestra solo como información.
+2. **Merge antes de probar el workflow:** GitHub solo ofrece `workflow_dispatch` para archivos que están en la rama principal, y el rol solo confía en `main`.
+3. **Confianza del rol de GitHub:** el `sub` del token incluye los identificadores numéricos del propietario y del repositorio, y la regla los usa.
+4. **Permisos del rol de GitHub:** actualizar el servicio también requiere registrar definiciones de tarea y pasar los roles de ECS; se añadieron además consultas del estado del despliegue.
+5. **`AWS_ROLE_ARN`** es una variable del repositorio, no un secreto, para no escribir el número de cuenta en el código público.
