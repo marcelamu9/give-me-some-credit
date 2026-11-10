@@ -79,17 +79,34 @@ else
 fi
 
 echo "== 6. Roles de IAM (primero se quitan las políticas, después el rol)"
-for role in "$EXECUTION_ROLE" "$INFRA_ROLE"; do
+for role in "$EXECUTION_ROLE" "$INFRA_ROLE" "$GITHUB_ROLE"; do
     if aws iam get-role --role-name "$role" >/dev/null 2>&1; then
+        # Políticas gestionadas (adjuntas) y políticas propias del rol (inline).
         for policy in $(aws iam list-attached-role-policies --role-name "$role" \
-            --query "AttachedPolicies[].PolicyArn" --output text); do
+            --query "AttachedPolicies[].PolicyArn" --output text | tr -d '\r'); do
             aws iam detach-role-policy --role-name "$role" --policy-arn "$policy"
+        done
+        for policy in $(aws iam list-role-policies --role-name "$role" \
+            --query "PolicyNames[]" --output text | tr -d '\r'); do
+            aws iam delete-role-policy --role-name "$role" --policy-name "$policy"
         done
         aws iam delete-role --role-name "$role" && echo "Eliminado $role"
     else
         echo "$role no existe."
     fi
 done
+
+echo "== 7. Proveedor OIDC de GitHub (solo si lo creó este proyecto)"
+PROVIDER_ARN="arn:aws:iam::$ACCOUNT_ID:oidc-provider/token.actions.githubusercontent.com"
+PROVIDER_TAG=$(aws iam list-open-id-connect-provider-tags \
+    --open-id-connect-provider-arn "$PROVIDER_ARN" \
+    --query "Tags[?Key=='$TAG_KEY'] | [0].Value" --output text 2>/dev/null | tr -d '\r')
+if [ "$PROVIDER_TAG" = "$TAG_VALUE" ]; then
+    aws iam delete-open-id-connect-provider --open-id-connect-provider-arn "$PROVIDER_ARN" &&
+        echo "Proveedor OIDC eliminado."
+else
+    echo "No existe o no es de este proyecto; no se toca."
+fi
 
 echo "== Verificación directa (lo que manda: se pregunta a cada servicio)"
 FAILED=0
@@ -120,6 +137,10 @@ check "logs de CloudWatch" "$(aws logs describe-log-groups \
     --output text)"
 check "roles de IAM" "$(aws iam list-roles \
     --query "Roles[?starts_with(RoleName, '$PROJECT-')].RoleName" --output text)"
+check "proveedor OIDC del proyecto" "$([ "$(aws iam list-open-id-connect-provider-tags \
+    --open-id-connect-provider-arn "$PROVIDER_ARN" \
+    --query "Tags[?Key=='$TAG_KEY'] | [0].Value" --output text 2>/dev/null | tr -d '\r')" \
+    = "$TAG_VALUE" ] && echo "$PROVIDER_ARN")"
 
 echo "== Índice de etiquetas $TAG_KEY=$TAG_VALUE (informativo)"
 # Este índice se actualiza con retraso: puede seguir listando recursos ya borrados (reglas de

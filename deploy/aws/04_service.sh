@@ -20,12 +20,19 @@ aws ecr describe-images --repository-name "$ECR_REPO" --image-ids "imageTag=$IMA
 STATUS=$(aws ecs describe-services --cluster default --services "$SERVICE" \
     --query "services[0].status" --output text 2>/dev/null || echo "NONE")
 
+# Seguimiento en pantalla solo en local: el rol de GitHub no tiene permisos para consultar cada
+# recurso, así que en Actions (donde CI está definida) se espera con un waiter al final.
+MONITOR=(--monitor-resources DEPLOYMENT --monitor-mode TEXT-ONLY)
+if [ -n "${CI:-}" ]; then
+    MONITOR=()
+fi
+
 if [ "$STATUS" = "ACTIVE" ]; then
     echo "El servicio $SERVICE ya existe: se despliega la imagen $IMAGE_TAG."
     aws ecs update-express-gateway-service \
         --service-arn "$SERVICE_ARN" \
         --primary-container "{\"image\": \"$IMAGE\", \"containerPort\": 8000}" \
-        --monitor-resources DEPLOYMENT --monitor-mode TEXT-ONLY
+        "${MONITOR[@]}"
 else
     # --primary-container: imagen y puerto del CMD del Dockerfile (por defecto sería 80).
     # --health-check-path: el balanceador no envía tráfico mientras /health no responda 200.
@@ -40,7 +47,11 @@ else
         --cpu 512 --memory 1024 \
         --scaling-target minTaskCount=1,maxTaskCount=1 \
         --tags "key=$TAG_KEY,value=$TAG_VALUE" \
-        --monitor-resources DEPLOYMENT --monitor-mode TEXT-ONLY
+        "${MONITOR[@]}"
+fi
+
+if [ -n "${CI:-}" ]; then
+    aws ecs wait services-stable --cluster default --services "$SERVICE"
 fi
 
 # URL pública (HTTPS). Tras crear el servicio puede pasar 1-3 minutos con 503 del balanceador

@@ -39,7 +39,8 @@ aws ecr describe-images --repository-name "$ECR_REPO" \
 
 # El escaneo se hace sobre la imagen real, no sobre el índice.
 IMAGE_DIGEST=$(aws ecr describe-images --repository-name "$ECR_REPO" \
-    --query "imageDetails[?artifactMediaType=='application/vnd.oci.image.config.v1+json'] \
+    --query "imageDetails[?imageManifestMediaType!='application/vnd.oci.image.index.v1+json' \
+             && artifactMediaType!='application/vnd.docker.attestation.manifest.v1+json'] \
              | sort_by(@, &imagePushedAt)[-1].imageDigest" --output text)
 echo "Escaneo de $IMAGE_DIGEST (puede tardar 1-2 minutos en completarse):"
 aws ecr describe-image-scan-findings --repository-name "$ECR_REPO" \
