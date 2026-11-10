@@ -7,6 +7,9 @@
 # tiene efecto.
 export MSYS_NO_PATHCONV=1
 
+# Sin paginador: si no, una salida larga se detiene en "-- Más --" esperando una tecla.
+export AWS_PAGER=""
+
 # Región de todos los recursos (D2 de la spec). AWS_DEFAULT_REGION hace que cada comando la use
 # sin tener que escribir --region.
 export AWS_DEFAULT_REGION="us-east-1"
