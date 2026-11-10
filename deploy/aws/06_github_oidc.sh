@@ -13,7 +13,13 @@ source "$(dirname "$0")/config.sh"
 GITHUB_REPO=$(git remote get-url origin | sed -E 's#^.*github\.com[:/]##; s#\.git$##')
 OIDC_HOST="token.actions.githubusercontent.com"
 PROVIDER_ARN="arn:aws:iam::$ACCOUNT_ID:oidc-provider/$OIDC_HOST"
-echo "Repositorio autorizado: $GITHUB_REPO (solo la rama main)"
+# GitHub identifica al repositorio por nombre e ID numérico en el token. Los ID no cambian: si
+# alguien recrea un repositorio con este nombre, su token no coincide. Son datos públicos.
+read -r OWNER_ID REPO_ID <<<"$(curl -fsS "https://api.github.com/repos/$GITHUB_REPO" |
+    uv run python -c "import json, sys; d = json.load(sys.stdin); print(d['owner']['id'], d['id'])" |
+    tr -d '\r')"
+SUBJECT="repo:${GITHUB_REPO%/*}@$OWNER_ID/${GITHUB_REPO#*/}@$REPO_ID:ref:refs/heads/main"
+echo "Identidad autorizada: $SUBJECT"
 
 # 1. Proveedor OIDC: "AWS confía en los tokens que firma GitHub Actions". Uno por cuenta.
 #    No hace falta huella (thumbprint): AWS valida a GitHub con sus propias autoridades.
@@ -38,7 +44,7 @@ TRUST="{
         \"Action\": \"sts:AssumeRoleWithWebIdentity\",
         \"Condition\": {\"StringEquals\": {
             \"$OIDC_HOST:aud\": \"sts.amazonaws.com\",
-            \"$OIDC_HOST:sub\": \"repo:$GITHUB_REPO:ref:refs/heads/main\"
+            \"$OIDC_HOST:sub\": \"$SUBJECT\"
         }}
     }]
 }"
@@ -73,11 +79,19 @@ aws iam put-role-policy --role-name "$GITHUB_ROLE" --policy-name "deploy" --poli
          \"Resource\": \"$REPO_ARN\"},
         {\"Sid\": \"UpdateService\", \"Effect\": \"Allow\",
          \"Action\": [\"ecs:DescribeServices\", \"ecs:DescribeExpressGatewayService\",
-                    \"ecs:UpdateExpressGatewayService\"],
+                    \"ecs:UpdateExpressGatewayService\", \"ecs:TagResource\"],
          \"Resource\": \"$SERVICE_ARN\"},
-        {\"Sid\": \"PassExecutionRole\", \"Effect\": \"Allow\",
+        {\"Sid\": \"NewTaskDefinitionRevision\", \"Effect\": \"Allow\",
+         \"Action\": [\"ecs:RegisterTaskDefinition\", \"ecs:TagResource\"],
+         \"Resource\": \"arn:aws:ecs:$REGION:$ACCOUNT_ID:task-definition/default-$SERVICE:*\"},
+        {\"Sid\": \"DescribeWithoutResourceScope\", \"Effect\": \"Allow\",
+         \"Action\": [\"ecs:DescribeTaskDefinition\", \"ecs:ListServiceDeployments\",
+                    \"ecs:DescribeServiceDeployments\", \"ecs:DescribeServiceRevisions\"],
+         \"Resource\": \"*\"},
+        {\"Sid\": \"PassServiceRoles\", \"Effect\": \"Allow\",
          \"Action\": [\"iam:PassRole\"],
-         \"Resource\": \"arn:aws:iam::$ACCOUNT_ID:role/$EXECUTION_ROLE\"}
+         \"Resource\": [\"arn:aws:iam::$ACCOUNT_ID:role/$EXECUTION_ROLE\",
+                      \"arn:aws:iam::$ACCOUNT_ID:role/$INFRA_ROLE\"]}
     ]
 }"
 

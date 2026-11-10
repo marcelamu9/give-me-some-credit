@@ -20,19 +20,11 @@ aws ecr describe-images --repository-name "$ECR_REPO" --image-ids "imageTag=$IMA
 STATUS=$(aws ecs describe-services --cluster default --services "$SERVICE" \
     --query "services[0].status" --output text 2>/dev/null || echo "NONE")
 
-# Seguimiento en pantalla solo en local: el rol de GitHub no tiene permisos para consultar cada
-# recurso, así que en Actions (donde CI está definida) se espera con un waiter al final.
-MONITOR=(--monitor-resources DEPLOYMENT --monitor-mode TEXT-ONLY)
-if [ -n "${CI:-}" ]; then
-    MONITOR=()
-fi
-
 if [ "$STATUS" = "ACTIVE" ]; then
     echo "El servicio $SERVICE ya existe: se despliega la imagen $IMAGE_TAG."
     aws ecs update-express-gateway-service \
         --service-arn "$SERVICE_ARN" \
-        --primary-container "{\"image\": \"$IMAGE\", \"containerPort\": 8000}" \
-        "${MONITOR[@]}"
+        --primary-container "{\"image\": \"$IMAGE\", \"containerPort\": 8000}" >/dev/null
 else
     # --primary-container: imagen y puerto del CMD del Dockerfile (por defecto sería 80).
     # --health-check-path: el balanceador no envía tráfico mientras /health no responda 200.
@@ -46,13 +38,17 @@ else
         --health-check-path /health \
         --cpu 512 --memory 1024 \
         --scaling-target minTaskCount=1,maxTaskCount=1 \
-        --tags "key=$TAG_KEY,value=$TAG_VALUE" \
-        "${MONITOR[@]}"
+        --tags "key=$TAG_KEY,value=$TAG_VALUE" >/dev/null
 fi
 
-if [ -n "${CI:-}" ]; then
-    aws ecs wait services-stable --cluster default --services "$SERVICE"
-fi
+# Se espera con un waiter y no con --monitor-resources: el seguimiento no termina solo aunque el
+# despliegue haya acabado, y el rol de GitHub no puede consultar cada recurso.
+# Cada waiter se rinde a los 10 minutos y un despliegue canary puede tardar algo más: hasta 2.
+echo "Esperando a que el servicio quede estable (5-20 minutos)..."
+for attempt in 1 2; do
+    aws ecs wait services-stable --cluster default --services "$SERVICE" && break
+    [ "$attempt" -lt 2 ] || exit 1
+done
 
 # URL pública (HTTPS). Tras crear el servicio puede pasar 1-3 minutos con 503 del balanceador
 # mientras termina de enviar tráfico a la tarea; el 503 no viene de la API.
