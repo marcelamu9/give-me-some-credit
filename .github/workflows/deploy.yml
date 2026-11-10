@@ -1,0 +1,54 @@
+# Despliegue manual en AWS (pestaña Actions > Deploy > Run workflow).
+# Es manual porque la infraestructura solo existe mientras se prueba (D10 de la spec 004):
+# antes hay que crearla con deploy/aws/01 a 04. El CI de tests sigue en ci.yml.
+name: Deploy
+
+on:
+  workflow_dispatch:
+
+# id-token: write permite pedirle a GitHub el token firmado de OIDC; sin claves de AWS guardadas.
+permissions:
+  id-token: write
+  contents: read
+
+# Si se lanza dos veces, la segunda espera a que acabe la primera.
+concurrency: deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # El rol de AWS solo confía en la rama main: desde otra rama fallaría al pedir credenciales.
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync --locked
+
+      # Primero las pruebas: si fallan, ni siquiera se piden permisos en AWS.
+      - name: Lint and test
+        run: uv run poe check
+
+      # OIDC: cambia el token de GitHub por credenciales temporales del rol.
+      # AWS_ROLE_ARN es una variable del repositorio, para no publicar el número de cuenta.
+      - name: Assume the AWS role
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      # El modelo no está en git: se descarga de su fuente oficial para meterlo en la imagen.
+      - name: Download the model from S3
+        run: bash deploy/aws/fetch_model.sh
+
+      - name: Build and push the image to ECR
+        run: bash deploy/aws/02_ecr_push.sh
+
+      - name: Update the ECS service
+        run: bash deploy/aws/04_service.sh
+
+      - name: Smoke test against the public URL
+        run: bash deploy/aws/05_smoke.sh

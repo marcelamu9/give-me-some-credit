@@ -1,0 +1,10 @@
+data/
+.venv/
+mlruns/
+notebooks/
+reports/
+tests/
+docs/
+.git/
+models/candidates.joblib
+**/__pycache__/
